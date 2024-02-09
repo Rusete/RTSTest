@@ -46,7 +46,7 @@ namespace DRC.RTS.Units.Enemy
         private void CheckForEnemyTarget()
         {
             rangeColliders = Physics.OverlapSphere(transform.position, baseStats.aggroRange, UnitHandler.instance.pUnitLayer);
-
+            print(rangeColliders.Length);
             for (int i = 0; i < rangeColliders.Length;)
             {
                 aggroTarget = rangeColliders[i].gameObject.transform;
@@ -66,12 +66,13 @@ namespace DRC.RTS.Units.Enemy
             }
             else
             {
-                distance = Vector3.Distance(aggroTarget.position, transform.position);
+                var closestBoundPoint = aggroTarget.GetComponent<Collider>().bounds.ClosestPoint(transform.position);
+                distance = Vector3.Distance(closestBoundPoint, transform.position);
                 navAgent.stoppingDistance = (baseStats.atkRange + 1);
 
                 if (distance <= baseStats.aggroRange)
                 {
-                    navAgent.SetDestination(aggroTarget.position);
+                    navAgent.SetDestination(closestBoundPoint);
                 }
             }
         }
@@ -82,6 +83,12 @@ namespace DRC.RTS.Units.Enemy
             {
                 aggroUnit.SetDamage(baseStats.attack);
                 atkCooldown = baseStats.atkSpeed;
+                if(aggroUnit == null)
+                {
+                    aggroTarget = null;
+                    navAgent.SetDestination(transform.position);
+                    hasAggro = false;
+                }
             }
         }
     }

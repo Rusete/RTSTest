@@ -14,8 +14,16 @@ namespace DRC.RTS.Units
 
         public void SetupHealth()
         {
-            maxHealth = gameObject.GetComponent<IUnit>().baseStats.health;
-            armor = gameObject.GetComponent<IUnit>().baseStats.armor;
+            if (gameObject.GetComponent<IUnit>())
+            {
+                maxHealth = gameObject.GetComponent<IUnit>().baseStats.health;
+                armor = gameObject.GetComponent<IUnit>().baseStats.armor;
+            }
+            else if (gameObject.GetComponent<IBuilding>())
+            {
+                maxHealth = gameObject.GetComponent<IBuilding>().baseStats.health;
+                armor = gameObject.GetComponent<IBuilding>().baseStats.armor;
+            }
             currentHealth = maxHealth;
         }
 
