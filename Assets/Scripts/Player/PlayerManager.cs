@@ -59,6 +59,7 @@ namespace DRC.RTS.Player
                     {
                         Buildings.Player.PlayerBuilding pB = entity.GetComponent<Buildings.Player.PlayerBuilding>();
                         pB.baseStats = Buildings.BuildingsHandler.instance.GetBasicBuildingStats(entityName);
+                        pB.GetComponent<Health>().SetupHealth();
                     }
                 }
             }

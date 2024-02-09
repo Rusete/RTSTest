@@ -32,7 +32,7 @@ namespace DRC.RTS.Units
                     unit = healer;
                     break;
                 default:
-                    Debug.Log($"Unit Typpe: {type} could not be found or does not exist");
+                    Debug.Log($"Unit Type: {type} could not be found or does not exist");
                     return null;
             }
             return unit.baseStats;

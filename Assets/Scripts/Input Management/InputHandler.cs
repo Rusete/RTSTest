@@ -37,7 +37,6 @@ namespace DRC.RTS.InputManager
         {
             if (isDragging)
             {
-                print("hola");
                 Rect rect = Selector.GetScreenRect(mousePos, Mouse.current.position.ReadValue());
                 Selector.DrawScreenRect(rect, colorRectangle);
                 Selector.DrawScreenRectBorder(rect, 3, colorRectangleBorder);
