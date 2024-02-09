@@ -31,6 +31,7 @@ namespace DRC.RTS.Player
         private void Update()
         {
             InputHandler.instance.HandleUnitMovement();
+            InputHandler.instance.HandleCamera();
         }
 
         public void SetBasicStats(Transform type)
