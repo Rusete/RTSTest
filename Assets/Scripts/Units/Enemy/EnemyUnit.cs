@@ -46,7 +46,6 @@ namespace DRC.RTS.Units.Enemy
         private void CheckForEnemyTarget()
         {
             rangeColliders = Physics.OverlapSphere(transform.position, baseStats.aggroRange, UnitHandler.instance.pUnitLayer);
-            print(rangeColliders.Length);
             for (int i = 0; i < rangeColliders.Length;)
             {
                 aggroTarget = rangeColliders[i].gameObject.transform;

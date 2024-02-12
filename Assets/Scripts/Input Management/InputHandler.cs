@@ -8,6 +8,7 @@ using System.Linq;
 using UnityEngine.EventSystems;
 using DRC.RTS.Buildings;
 using DRC.RTS.Interactables;
+using static UnityEngine.UIElements.UxmlAttributeDescription;
 
 namespace DRC.RTS.InputManager
 {
@@ -28,11 +29,26 @@ namespace DRC.RTS.InputManager
         [SerializeField] Color colorRectangle;
         [SerializeField] Color colorRectangleBorder;
 
+
+        public Transform mainCamera;
+        [SerializeField] InputAction moveCameraAction;
+        public float camMovementSpeed = 30;
+        public float camRotSpeed = 50;
+        public float mMarginX;
+        public float mMarginY;
+
         private void Awake()
         {
             instance = this;
         }
-        
+        private void OnEnable()
+        {
+            moveCameraAction.Enable();
+        }
+        private void OnDisable()
+        {
+            moveCameraAction.Disable();
+        }
         private void OnGUI()
         {
             if (isDragging)
@@ -42,6 +58,53 @@ namespace DRC.RTS.InputManager
                 Selector.DrawScreenRectBorder(rect, 3, colorRectangleBorder);
             }
         }
+
+        public void HandleCamera()
+        {
+            // Obtiene el vector de movimiento de la acción de entrada
+            Vector2 movementInput = moveCameraAction.ReadValue<Vector2>();
+
+            float verticalInput = movementInput.y;
+            float horizontalInput = movementInput.x;
+
+            if (Keyboard.current.qKey.isPressed)
+            {
+                mainCamera.Rotate(Vector3.up, Time.deltaTime * camRotSpeed);
+            }
+            else if (Keyboard.current.eKey.isPressed)
+            {
+                mainCamera.Rotate(Vector3.up, -Time.deltaTime * camRotSpeed);
+            }
+            // Verifica si el mouse está cerca del borde de la pantalla
+            if (Mouse.current.position.x.value >= Screen.width - mMarginX ||
+                Mouse.current.position.x.value <= mMarginX ||
+                Mouse.current.position.y.value >= Screen.height - mMarginY ||
+                Mouse.current.position.y.value <= mMarginY)
+            {
+                // Calcula la dirección en la que mover la cámara
+                Vector3 movementDirection = Vector3.zero;
+
+                if (Mouse.current.position.x.value >= Screen.width - mMarginX)
+                    movementDirection += Vector3.right;
+                else if (Mouse.current.position.x.value <= mMarginX)
+                    movementDirection -= Vector3.right;
+
+                if (Mouse.current.position.y.value >= Screen.height - mMarginY)
+                    movementDirection += Vector3.forward;
+                else if (Mouse.current.position.y.value <= mMarginY)
+                    movementDirection -= Vector3.forward;
+
+                // Mueve la cámara
+                mainCamera.Translate(camMovementSpeed * Time.deltaTime * movementDirection.normalized);
+            }
+            else
+            {
+                // Mueve la cámara con las teclas W/A/S/D
+                mainCamera.Translate(camMovementSpeed * Time.deltaTime * verticalInput * Vector3.forward);
+                mainCamera.Translate(camMovementSpeed * Time.deltaTime * horizontalInput * Vector3.right);
+            }
+        }
+        
         public void HandleUnitMovement()
         {
             if (Mouse.current.leftButton.wasPressedThisFrame)
