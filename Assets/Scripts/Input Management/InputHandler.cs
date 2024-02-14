@@ -10,6 +10,7 @@ using DRC.RTS.Buildings;
 using DRC.RTS.Interactables;
 using static UnityEngine.UIElements.UxmlAttributeDescription;
 using DRC.RPG.Utils;
+using Unity.PlasticSCM.Editor.WebApi;
 
 namespace DRC.RTS.InputManager
 {
@@ -287,40 +288,62 @@ namespace DRC.RTS.InputManager
                 return null;
             }
         }
-        public IEnumerator PlaceObject(GhostPlaceable objectToPlace)
+        public void BeginConstruction(GhostPlaceable objectToPlace)
         {
-            isPlacing = true;
-            bool keepMovingGhost = true;
-            do
+            placingObject = objectToPlace;
+            PlayerManager.instance.playerState = PlayerManager.EPlayerState.placing;
+        }
+        public GhostPlaceable placingObject;
+        public void HandleGhost()
+        {
+            Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.value);
+            placingObject.UpdateGhostStatus(ray);
+            if (Mouse.current.leftButton.wasReleasedThisFrame)
             {
-                Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.value);
-                objectToPlace.UpdateGhostStatuss(ray);
-                yield return null;
-                if (Mouse.current.leftButton.isPressed)
+                isPlacing = true;
+                return;
+            }
+            if (!isPlacing) return;
+
+            bool multiPlace = Keyboard.current.ctrlKey.isPressed;
+            if (Mouse.current.leftButton.wasPressedThisFrame)
+            {
+                GameObject building = placingObject.gameObject;
+                if (placingObject.Place())
                 {
-                    GameObject building = objectToPlace.gameObject;
-                    objectToPlace.Place();
-                    foreach(var unit in selectedUnits)
+                    foreach (var unit in selectedUnits)
                     {
-                        print(unit.GetComponent<Interactables.IUnit>().unitType.type);
                         if (unit.GetComponent<Interactables.IUnit>().unitType.type == Units.UnitData.EUnitType.Worker)
                         {
+                            unit.GetComponent<Units.Player.PlayerUnit>().MoveUnit(building.transform.position);
                             building.GetComponent<IBuilding>().AddToConstructionWorkingQueue(unit);
                         }
                     }
-                    keepMovingGhost = false;
+                    if (multiPlace)
+                    {
+                        placingObject = ObjectPoolManager.SpawnObject(placingObject.gameObject, placingObject.transform.position, placingObject.transform.rotation, ObjectPoolManager.PoolType.Ghost).GetComponent<GhostPlaceable>();
+                    }
+                    else
+                    {
+                        placingObject = null;
+                        StopPlacingObject();
+                    }
                 }
-                if (Keyboard.current.escapeKey.isPressed)
+                else if(!multiPlace)
                 {
-                    keepMovingGhost = false;
-                    ObjectPoolManager.ReturnObjectToPool(objectToPlace.gameObject);
+                    StopPlacingObject();
                 }
-            } while (keepMovingGhost);
-            do
+            }
+            if (Mouse.current.rightButton.wasPressedThisFrame || Keyboard.current.escapeKey.wasPressedThisFrame)
             {
-                yield return null;
-            } while (!Mouse.current.leftButton.wasReleasedThisFrame);
-            isPlacing = false;
+                StopPlacingObject();
+            }
+        }
+
+        private void StopPlacingObject()
+        {
+            if(placingObject) ObjectPoolManager.ReturnObjectToPool(placingObject.gameObject);
+            PlayerManager.instance.playerState = PlayerManager.EPlayerState.selecting;
         }
     }
 }

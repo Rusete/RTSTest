@@ -27,6 +27,10 @@ namespace DRC.RTS.Interactables
         {
             baseStats = buildingType.baseStats;
         }
+        private void OnEnable()
+        {
+            gameObject.name = buildingType.name;
+        }
         public override void OnInteractEnter()
         {
             if (!isConstructed) return;
@@ -55,14 +59,12 @@ namespace DRC.RTS.Interactables
             {
                 if (workers.Count == 0) break;
                 progression += (3 * buildingType.constructionTime / (workers.Count + 2)) * Time.deltaTime;
-                print("Working");
                 yield return null;
 
             } while (progression <= buildingType.constructionTime);
 
             if(progression>= buildingType.constructionTime)
             {
-                print("Me Construí");
                 isConstructed = true;
                 workers.Clear();
             }

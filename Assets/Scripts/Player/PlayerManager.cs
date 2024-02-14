@@ -16,6 +16,14 @@ namespace DRC.RTS.Player
 
         public FormationBase formationBase = null;
 
+        public enum EPlayerState
+        {
+            placing,
+            selecting
+        }
+
+        public EPlayerState playerState = EPlayerState.selecting;
+
         private void Awake()
         {
             instance = this;
@@ -30,7 +38,16 @@ namespace DRC.RTS.Player
 
         private void Update()
         {
-            InputHandler.instance.HandleUnitMovement();
+            switch (playerState)
+            {
+                case EPlayerState.placing:
+                    InputHandler.instance.HandleGhost();
+                    break;
+                case EPlayerState.selecting:
+                    InputHandler.instance.HandleUnitMovement();
+                    break;
+
+            }
             InputHandler.instance.HandleCamera();
         }
 

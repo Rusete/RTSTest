@@ -11,6 +11,7 @@ namespace DRC.RPG.Utils
 
         private GameObject _objectPoolEmptyHolder;
         private static GameObject _gameObjectsEmpty;
+        private static GameObject _gameObjectsGhost;
         public enum PoolType
         {
             GameObject,
@@ -30,7 +31,9 @@ namespace DRC.RPG.Utils
             _objectPoolEmptyHolder = new GameObject("Pool Objects");
 
             _gameObjectsEmpty = new GameObject("GameObject");
+            _gameObjectsGhost = new GameObject("Buildings");
             _gameObjectsEmpty.transform.SetParent(_objectPoolEmptyHolder.transform);
+            _gameObjectsGhost.transform.SetParent(_objectPoolEmptyHolder.transform);
         }
 
         public static GameObject SpawnObject(GameObject objectToSpawn, Vector3 spawnPosition, Quaternion spawnRotation, PoolType poolType = PoolType.None)
@@ -66,9 +69,12 @@ namespace DRC.RPG.Utils
         }
         public static void ReturnObjectToPool(GameObject obj)
         {
-            string goName = obj.name.Substring(0, obj.name.Length - 7); // Se elimina el (Clone)
+            if (obj.name.Contains("(Clone)"))
+            {
+                obj.name = obj.name.Substring(0, obj.name.Length - 7); // Se elimina el (Clone)
+            }
 
-            PooledObjectInfo pool = ObjectPools.Find(p => p.LookUpString == goName);
+            PooledObjectInfo pool = ObjectPools.Find(p => p.LookUpString == obj.name);
 
             if (pool == null)
             {
@@ -84,6 +90,8 @@ namespace DRC.RPG.Utils
             {
                 case PoolType.GameObject:
                     return _gameObjectsEmpty;
+                case PoolType.Ghost:
+                    return _gameObjectsGhost;
                 case PoolType.None:
                     return null;
                 default:

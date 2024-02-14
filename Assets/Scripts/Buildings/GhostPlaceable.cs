@@ -20,7 +20,7 @@ public class GhostPlaceable : MonoBehaviour
         meshRenderer.material = placeableMaterial;
     }
 
-    public void UpdateGhostStatuss(Ray ray)
+    public void UpdateGhostStatus(Ray ray)
     {
         RaycastHit hit;
         if (Physics.Raycast(ray, out hit, 100000, hitLayer))
@@ -38,15 +38,17 @@ public class GhostPlaceable : MonoBehaviour
         }
     }
 
-    public void Place()
+    public bool Place()
     {
-        if (!placeable) return;
+        print(placeable);
+        if (!placeable) return placeable;
         transform.parent = PlayerManager.instance.playerBuildings;
         transform.GetComponent<NavMeshObstacle>().enabled = true;
         transform.GetComponent<Collider>().isTrigger = false;
         transform.GetComponent<IBuilding>().enabled = true;
         enabled = false;
         StartCoroutine(GetComponent<IBuilding>().Construct());
+        return placeable;
     }
 
     bool IsPositionOccupied(Vector3 position, Bounds bounds)
