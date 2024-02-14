@@ -8,7 +8,7 @@ namespace DRC.RTS.Interactables
     public class IUnit : Interactable
     {
         public UnitStatTypes.Base baseStats;
-        public BasicUnit unitType;
+        public UnitData unitType;
 
         private void Start()
         {

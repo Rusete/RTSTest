@@ -9,6 +9,7 @@ using UnityEngine.EventSystems;
 using DRC.RTS.Buildings;
 using DRC.RTS.Interactables;
 using static UnityEngine.UIElements.UxmlAttributeDescription;
+using DRC.RPG.Utils;
 
 namespace DRC.RTS.InputManager
 {
@@ -20,10 +21,10 @@ namespace DRC.RTS.InputManager
 
         public HashSet<Transform> selectedUnits = new();
         public Transform selectedBuilding = null;
-
         public LayerMask interactableLayer = new();
 
         [SerializeField]private bool isDragging;
+        [SerializeField]private bool isPlacing;
 
         private Vector3 mousePos;
         [SerializeField] Color colorRectangle;
@@ -51,6 +52,7 @@ namespace DRC.RTS.InputManager
         }
         private void OnGUI()
         {
+            if (isPlacing) return;
             if (isDragging)
             {
                 Rect rect = Selector.GetScreenRect(mousePos, Mouse.current.position.ReadValue());
@@ -117,16 +119,16 @@ namespace DRC.RTS.InputManager
                 }
                 if(Physics.Raycast(ray, out hit, Mathf.Infinity, interactableLayer))
                 {
-                    if (addedUnit(hit.transform, Keyboard.current.leftShiftKey.isPressed || Keyboard.current.leftCtrlKey.isPressed))
+                    if (AddedUnit(hit.transform, Keyboard.current.leftShiftKey.isPressed || Keyboard.current.leftCtrlKey.isPressed))
                     {
                         //be able to do stuff with units
                     }
-                    else if (addedBuilding(hit.transform))
+                    else if (AddedBuilding(hit.transform))
                     {
                          //be able to do stuff with building
                     }
                 }
-                else
+                else if(!isPlacing)
                 {
                     isDragging = true;
                     if (!Keyboard.current.leftShiftKey.isPressed && !Keyboard.current.leftCtrlKey.isPressed) DeselectUnits();
@@ -140,7 +142,7 @@ namespace DRC.RTS.InputManager
                     foreach(Transform unit in child)
                     {
                         if(IsWithinSelectionBounds(unit))
-                            addedUnit(unit, true);
+                            AddedUnit(unit, true);
                     }
                 }
                 isDragging = false;
@@ -245,7 +247,7 @@ namespace DRC.RTS.InputManager
             return selectedUnits.Count() > 0;
         }
 
-        private Interactables.IUnit addedUnit(Transform tf, bool canMultiselect = false)
+        private Interactables.IUnit AddedUnit(Transform tf, bool canMultiselect = false)
         {
             Interactables.IUnit iUnit = tf.GetComponent<Interactables.IUnit>();
             if (iUnit)
@@ -267,7 +269,7 @@ namespace DRC.RTS.InputManager
             }
         }
 
-        private Interactables.IBuilding addedBuilding(Transform tf)
+        private Interactables.IBuilding AddedBuilding(Transform tf)
         {
             Interactables.IBuilding iBuilding= tf.GetComponent<Interactables.IBuilding>();
             if (iBuilding)
@@ -284,6 +286,41 @@ namespace DRC.RTS.InputManager
             {
                 return null;
             }
+        }
+        public IEnumerator PlaceObject(GhostPlaceable objectToPlace)
+        {
+            isPlacing = true;
+            bool keepMovingGhost = true;
+            do
+            {
+                Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.value);
+                objectToPlace.UpdateGhostStatuss(ray);
+                yield return null;
+                if (Mouse.current.leftButton.isPressed)
+                {
+                    GameObject building = objectToPlace.gameObject;
+                    objectToPlace.Place();
+                    foreach(var unit in selectedUnits)
+                    {
+                        print(unit.GetComponent<Interactables.IUnit>().unitType.type);
+                        if (unit.GetComponent<Interactables.IUnit>().unitType.type == Units.UnitData.EUnitType.Worker)
+                        {
+                            building.GetComponent<IBuilding>().AddToConstructionWorkingQueue(unit);
+                        }
+                    }
+                    keepMovingGhost = false;
+                }
+                if (Keyboard.current.escapeKey.isPressed)
+                {
+                    keepMovingGhost = false;
+                    ObjectPoolManager.ReturnObjectToPool(objectToPlace.gameObject);
+                }
+            } while (keepMovingGhost);
+            do
+            {
+                yield return null;
+            } while (!Mouse.current.leftButton.wasReleasedThisFrame);
+            isPlacing = false;
         }
     }
 }

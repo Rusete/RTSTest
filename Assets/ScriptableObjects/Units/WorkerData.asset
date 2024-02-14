@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a906632ade060614faadf7695fc456b1, type: 3}
+  m_Name: WorkerData
+  m_EditorClassIdentifier: 
+  type: 0
+  name: Worker
+  unitPrefab: {fileID: 8104414454307391312, guid: 197f57124d9c7954896734e9babecf53, type: 3}
+  icon: {fileID: 2912078806932607674, guid: 0df4f25f04faa314abdc2b7fb5de0832, type: 3}
+  spawnTime: 2
+  baseStats:
+    cost: 100
+    aggroRange: 5
+    atkRange: 5
+    atkSpeed: 5
+    attack: 5
+    health: 5
+    armor: 5

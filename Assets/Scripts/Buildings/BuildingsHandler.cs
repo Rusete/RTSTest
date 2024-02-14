@@ -8,7 +8,7 @@ namespace DRC.RTS.Buildings
     {
         public static BuildingsHandler instance;
         [SerializeField]
-        private BasicBuilding barracks;
+        private BuildingData barracks;
         public LayerMask pBuildingLayer, eBuildingLayer;
 
         private void Awake()
@@ -18,7 +18,7 @@ namespace DRC.RTS.Buildings
 
         public BuildingStatTypes.Base GetBasicBuildingStats(string type)
         {
-            BasicBuilding building;
+            BuildingData building;
             switch (type)
             {
                 case "barrack":

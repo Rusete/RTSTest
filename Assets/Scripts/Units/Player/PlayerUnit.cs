@@ -22,5 +22,11 @@ namespace DRC.RTS.Units.Player
             if(navAgent == null) navAgent=GetComponent<NavMeshAgent>();
             navAgent.SetDestination(destination);
         }
+
+        public override void OnInteractEnter()
+        {
+            UI.HUD.ActionFrame.instance.SetActionButtons(actions);
+            base.OnInteractEnter();
+        }
     }
 }

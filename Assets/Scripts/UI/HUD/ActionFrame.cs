@@ -1,6 +1,8 @@
 using DRC.RTS.Buildings.Player;
+using DRC.RTS.InputManager;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -20,8 +22,9 @@ namespace DRC.RTS.UI.HUD
             instance = this;
         }
 
-        public void SetActionButtons(PlayerActions actions, PlayerBuilding selected)
+        public void SetActionButtons(PlayerActions actions)
         {
+            ClearActions();
             actionList = actions;
 
             if (actions.basicUnits.Count > 0)
@@ -29,6 +32,7 @@ namespace DRC.RTS.UI.HUD
                 foreach(var unit in actions.basicUnits)
                 {
                     Button btn = Instantiate(actionButton, layoutGroup);
+                    btn.GetComponent<Action>().type = Action.EActionType.InstantiateUnit;
                     btn.name = unit.name;
                     GameObject icon = Instantiate(unit.icon, btn.transform);
                     //add text?
@@ -40,6 +44,7 @@ namespace DRC.RTS.UI.HUD
                 foreach (var building in actions.basicBuildings)
                 {
                     Button btn = Instantiate(actionButton, layoutGroup);
+                    btn.GetComponent<Action>().type = Action.EActionType.InstantiatBuilding;
                     btn.name = building.name;
                     GameObject icon = Instantiate(building.icon, btn.transform);
                     //add text?
@@ -61,14 +66,8 @@ namespace DRC.RTS.UI.HUD
         {
             if (IsUnit(objectToSpawn))
             {
-                Units.BasicUnit unit = IsUnit(objectToSpawn);
+                Units.UnitData unit = IsUnit(objectToSpawn);
                 InputManager.InputHandler.instance.selectedBuilding.GetComponent<PlayerBuilding>().AddSpawn(unit.spawnTime, unit.unitPrefab);
-            }
-            else if(IsBuilding(objectToSpawn))
-            {
-                /*Buildings.BasicBuilding building = IsBuilding(objectToSpawn);
-                selectedBuilding.spawnQueue.Add(building.spawnTime);
-                selectedBuilding.spawnOrder.Add(building.buildingPrefab);*/
             }
             else
             {
@@ -76,11 +75,11 @@ namespace DRC.RTS.UI.HUD
             }
         }
 
-        private Units.BasicUnit IsUnit(string name)
+        private Units.UnitData IsUnit(string name)
         {
             if (actionList.basicUnits.Count > 0)
             {
-                foreach(Units.BasicUnit unit in actionList.basicUnits)
+                foreach(Units.UnitData unit in actionList.basicUnits)
                 {
                     if(unit.name == name)
                     {
@@ -92,11 +91,11 @@ namespace DRC.RTS.UI.HUD
             return null;
         }
 
-        private Buildings.BasicBuilding IsBuilding(string name)
+        private Buildings.BuildingData IsBuilding(string name)
         {
             if (actionList.basicBuildings.Count > 0)
             {
-                foreach (Buildings.BasicBuilding building in actionList.basicBuildings)
+                foreach (Buildings.BuildingData building in actionList.basicBuildings)
                 {
                     if (building.name == name)
                     {
@@ -105,6 +104,20 @@ namespace DRC.RTS.UI.HUD
                 }
             }
             return null;
+        }
+
+        public void InstantiateBuildingConstruction(string objectToSpawn)
+        {
+            if (IsBuilding(objectToSpawn))
+            {
+                Buildings.BuildingData building = IsBuilding(objectToSpawn);
+                StartCoroutine(InputHandler.instance.PlaceObject(Instantiate(building.buildingPrefab).GetComponent<GhostPlaceable>()));
+            }
+            else
+            {
+                Debug.Log($"{objectToSpawn} is not a spawnable object");
+            }
+
         }
     }
 }

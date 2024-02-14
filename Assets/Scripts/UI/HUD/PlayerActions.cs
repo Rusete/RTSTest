@@ -9,13 +9,11 @@ namespace DRC.RTS.UI.HUD
     {
         [Space(5)]
         [Header("Units")]
-        public List<Units.BasicUnit> basicUnits = new List<Units.BasicUnit>();
+        public List<Units.UnitData> basicUnits = new List<Units.UnitData>();
 
         [Space(5)]
         [Header("Buildings")]
         [Space(15)]
-        public List<Buildings.BasicBuilding> basicBuildings = new List<Buildings.BasicBuilding>();
-
-
+        public List<Buildings.BuildingData> basicBuildings = new List<Buildings.BuildingData>();
     }
 }

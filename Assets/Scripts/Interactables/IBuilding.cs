@@ -1,21 +1,27 @@
 using DRC.RTS.Buildings;
 using DRC.RTS.Buildings.Player;
+using DRC.RTS.Units;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace DRC.RTS.Interactables
 {
+    [RequireComponent(typeof(Health))]
     public class IBuilding : Interactable
     {
-        public UI.HUD.PlayerActions actions;
         public GameObject spawnMarker = null;
         public GameObject spawnMarkerGraphics = null;
         public float maxMarkerDistance = 10f;
 
 
         public BuildingStatTypes.Base baseStats;
-        public BasicBuilding buildingType;
+        public BuildingData buildingType;
+        public List<Transform> workers = new List<Transform>();
+        protected bool isConstructed;
+        protected bool beingConstructed;
+        [SerializeField] protected float progression = 0;
 
         private void Start()
         {
@@ -23,6 +29,7 @@ namespace DRC.RTS.Interactables
         }
         public override void OnInteractEnter()
         {
+            if (!isConstructed) return;
             InputManager.InputHandler.instance.selectedBuilding.GetComponent<PlayerBuilding>().SetSpawnLocation(spawnMarker);
             spawnMarkerGraphics.SetActive(true);
             base.OnInteractEnter();
@@ -30,6 +37,7 @@ namespace DRC.RTS.Interactables
 
         public override void OnInteractExit()
         {
+            if (!isConstructed) return;
             UI.HUD.ActionFrame.instance.ClearActions();
             spawnMarkerGraphics.SetActive(false);
             base.OnInteractExit();
@@ -38,6 +46,38 @@ namespace DRC.RTS.Interactables
         public void SetSpawnMarkerLocation(Vector3 point)
         {
             spawnMarker.transform.position = point;
+        }
+
+        public IEnumerator Construct()
+        {
+            beingConstructed = true;
+            do
+            {
+                if (workers.Count == 0) break;
+                progression += (3 * buildingType.constructionTime / (workers.Count + 2)) * Time.deltaTime;
+                print("Working");
+                yield return null;
+
+            } while (progression <= buildingType.constructionTime);
+
+            if(progression>= buildingType.constructionTime)
+            {
+                print("Me Construí");
+                isConstructed = true;
+                workers.Clear();
+            }
+            beingConstructed = false;
+        }
+
+        public void AddToConstructionWorkingQueue(Transform unit)
+        {
+            workers.Add(unit);
+            if(!beingConstructed) StartCoroutine(Construct());
+        }
+
+        public void RemoveFromConstrcutionWorkingQueue(Transform unit)
+        {
+            workers.Remove(unit);
         }
     }
 }

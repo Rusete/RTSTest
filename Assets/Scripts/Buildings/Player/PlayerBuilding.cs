@@ -21,9 +21,11 @@ namespace DRC.RTS.Buildings.Player
         {
             actionTimer = GetComponent<ActionTimer>();
         }
+
         public override void OnInteractEnter()
         {
-            UI.HUD.ActionFrame.instance.SetActionButtons(actions, this);
+            if (!isConstructed) return;
+            UI.HUD.ActionFrame.instance.SetActionButtons(actions);
             base.OnInteractEnter();
         }
         public void SpawnObject()

@@ -8,6 +8,7 @@ namespace DRC.RTS.Interactables
     {
         public bool isInteracting = false;
         public GameObject highlight = null;
+        public UI.HUD.PlayerActions actions;
         public virtual void Awake()
         {
             highlight .SetActive(false);
