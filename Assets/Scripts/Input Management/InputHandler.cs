@@ -6,11 +6,8 @@ using UnityEngine.InputSystem;
 using DRC.RTS.Player;
 using System.Linq;
 using UnityEngine.EventSystems;
-using DRC.RTS.Buildings;
-using DRC.RTS.Interactables;
-using static UnityEngine.UIElements.UxmlAttributeDescription;
 using DRC.RPG.Utils;
-using Unity.PlasticSCM.Editor.WebApi;
+using DRC.RTS.UI.HUD;
 
 namespace DRC.RTS.InputManager
 {
@@ -230,6 +227,7 @@ namespace DRC.RTS.InputManager
                 selectedUnits.ElementAt(i).gameObject.GetComponent<Interactables.IUnit>().OnInteractExit();
             }
             selectedUnits.Clear();
+            ActionFrame.instance.ClearActions();
         }
 
         private bool IsWithinSelectionBounds(Transform tf)
@@ -288,12 +286,12 @@ namespace DRC.RTS.InputManager
                 return null;
             }
         }
-        public void BeginConstruction(GhostPlaceable objectToPlace)
+        public void BeginConstruction(Buildings.GhostPlaceable objectToPlace)
         {
             placingObject = objectToPlace;
             PlayerManager.instance.playerState = PlayerManager.EPlayerState.placing;
         }
-        public GhostPlaceable placingObject;
+        public Buildings.GhostPlaceable placingObject;
         public void HandleGhost()
         {
             Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.value);
@@ -315,13 +313,13 @@ namespace DRC.RTS.InputManager
                     {
                         if (unit.GetComponent<Interactables.IUnit>().unitType.type == Units.UnitData.EUnitType.Worker)
                         {
-                            unit.GetComponent<Units.Player.PlayerUnit>().MoveUnit(building.transform.position);
-                            building.GetComponent<IBuilding>().AddToConstructionWorkingQueue(unit);
+                            unit.GetComponent<Units.Player.PlayerUnit>().MoveUnit(building.transform, Units.Player.PlayerUnit.EUnitAction.Repair, multiPlace);
+                            //building.GetComponent<IBuilding>().AddToConstructionWorkingQueue(unit);
                         }
                     }
                     if (multiPlace)
                     {
-                        placingObject = ObjectPoolManager.SpawnObject(placingObject.gameObject, placingObject.transform.position, placingObject.transform.rotation, ObjectPoolManager.PoolType.Ghost).GetComponent<GhostPlaceable>();
+                        placingObject = ObjectPoolManager.SpawnObject(placingObject.gameObject, placingObject.transform.position, placingObject.transform.rotation, ObjectPoolManager.PoolType.GhostPlaceable).GetComponent<Buildings.GhostPlaceable>();
                     }
                     else
                     {
@@ -344,6 +342,7 @@ namespace DRC.RTS.InputManager
         {
             if(placingObject) ObjectPoolManager.ReturnObjectToPool(placingObject.gameObject);
             PlayerManager.instance.playerState = PlayerManager.EPlayerState.selecting;
+            isPlacing = false;
         }
     }
 }

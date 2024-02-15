@@ -16,7 +16,7 @@ namespace DRC.RPG.Utils
         {
             GameObject,
             None,
-            Ghost,
+            GhostPlaceable,
             Agent
         }
 
@@ -90,7 +90,7 @@ namespace DRC.RPG.Utils
             {
                 case PoolType.GameObject:
                     return _gameObjectsEmpty;
-                case PoolType.Ghost:
+                case PoolType.GhostPlaceable:
                     return _gameObjectsGhost;
                 case PoolType.None:
                     return null;

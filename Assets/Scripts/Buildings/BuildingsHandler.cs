@@ -19,7 +19,7 @@ namespace DRC.RTS.Buildings
         public BuildingStatTypes.Base GetBasicBuildingStats(string type)
         {
             BuildingData building;
-            switch (type)
+            switch (type.ToLower())
             {
                 case "barrack":
                     building = barracks;

@@ -18,10 +18,10 @@ MonoBehaviour:
   icon: {fileID: 2912078806932607674, guid: c6ffd6c3ef6ded34988c3d95c39f3300, type: 3}
   spawnTime: 8
   baseStats:
-    cost: 0
-    aggroRange: 0
-    atkRange: 0
-    atkSpeed: 0
-    attack: 0
-    health: 0
-    armor: 0
+    cost: 5
+    aggroRange: 5
+    atkRange: 5
+    atkSpeed: 5
+    attack: 5
+    health: 5
+    armor: 5

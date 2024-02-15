@@ -10,8 +10,6 @@ namespace DRC.RTS.Units.Enemy
     [RequireComponent(typeof(NavMeshAgent))]
     public class EnemyUnit : IUnit
     {
-        private NavMeshAgent navAgent;
-
         private Collider[] rangeColliders;
 
         private Transform aggroTarget;

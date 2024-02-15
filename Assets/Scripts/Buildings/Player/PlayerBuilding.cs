@@ -24,8 +24,13 @@ namespace DRC.RTS.Buildings.Player
 
         public override void OnInteractEnter()
         {
-            if (!isConstructed) return;
-            UI.HUD.ActionFrame.instance.SetActionButtons(actions);
+            if (isConstructed)
+            {
+                UI.HUD.ActionFrame.instance.SetActionButtons(actions);
+                spawnMarkerGraphics.SetActive(true);
+                GetComponent<PlayerBuilding>().SetSpawnLocation(spawnMarker);
+            }
+
             base.OnInteractEnter();
         }
         public void SpawnObject()
@@ -35,8 +40,8 @@ namespace DRC.RTS.Buildings.Player
             Units.Player.PlayerUnit pU = spawnedObject.GetComponent<Units.Player.PlayerUnit>();
 
             pU.baseStats = Units.UnitHandler.instance.GetBasicUnitStats(spawnedObject.name.ToLower());
-            pU.GetComponent<Units.Health>().SetupHealth();
-            spawnedObject.GetComponent<Units.Player.PlayerUnit>().MoveUnit(spawnPoint.transform.position);
+            pU.GetComponent<Health>().SetupHealth();
+            spawnedObject.GetComponent<Units.Player.PlayerUnit>().MoveUnit(spawnPoint.transform.position, Units.Player.PlayerUnit.EUnitAction.Move);
             spawnOrder.Remove(spawnOrder[0]);
         }
 

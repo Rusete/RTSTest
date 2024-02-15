@@ -16,7 +16,7 @@ MonoBehaviour:
   name: Barrack
   buildingPrefab: {fileID: 7096297000724434320, guid: 32029922c2128fa43b9058e18a5b2e09, type: 3}
   icon: {fileID: 260962546104737635, guid: 95b3d6ba16ac9fd43a7c35e650eb4e01, type: 3}
-  constructionTime: 1
+  constructionTime: 5
   baseStats:
     health: 500
     armor: 25

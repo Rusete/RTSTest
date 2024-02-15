@@ -19,8 +19,6 @@ namespace DRC.RTS.UI.HUD
         {
             if(building.spawnQueue.Count > 0)
             {
-                Debug.Log($"Waiting for {building.spawnQueue[0]}");
-
                 yield return new WaitForSeconds(building.spawnQueue[0]);
 
                 building.SpawnObject();

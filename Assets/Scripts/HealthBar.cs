@@ -16,12 +16,18 @@ public class HealthBar : MonoBehaviour
         CheckHealthBarGradientAmount();
     }
 
-    public void UpdateHealthBar(float maxHealth, float currentHealth)
+    public void UpdateHealthBar(float maxHealth, float currentHealth, bool instant = false)
     {
         target = currentHealth / maxHealth;
         if (!image.isActiveAndEnabled) return;
-        StartCoroutine(DrainHealthBar());
         CheckHealthBarGradientAmount();
+        if (!instant) 
+            StartCoroutine(DrainHealthBar());
+        else
+        {
+            image.fillAmount = target;
+            image.color = newHealthBarColor;
+        }
     }
 
     private IEnumerator DrainHealthBar()

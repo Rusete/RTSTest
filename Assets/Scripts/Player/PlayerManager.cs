@@ -65,19 +65,19 @@ namespace DRC.RTS.Player
                     {
                         Units.Player.PlayerUnit pU = entity.GetComponent<Units.Player.PlayerUnit>();
                         pU.baseStats = Units.UnitHandler.instance.GetBasicUnitStats(entityName);
-                        pU.GetComponent<Health>().SetupHealth();
+                        pU.GetComponent<Interactables.Health>().SetupHealth();
                     }
                     else if (type == enemyUnits)
                     {
                         Units.Enemy.EnemyUnit eU = entity.GetComponent<Units.Enemy.EnemyUnit>();
                         eU.baseStats = Units.UnitHandler.instance.GetBasicUnitStats(entityName);
-                        eU.GetComponent<Health>().SetupHealth();
+                        eU.GetComponent<Interactables.Health>().SetupHealth();
                     }
                     else if (type == playerBuildings)
                     {
                         Buildings.Player.PlayerBuilding pB = entity.GetComponent<Buildings.Player.PlayerBuilding>();
                         pB.baseStats = Buildings.BuildingsHandler.instance.GetBasicBuildingStats(entityName);
-                        pB.GetComponent<Health>().SetupHealth();
+                        pB.GetComponent<Interactables.Health>().SetupHealth();
                     }
                 }
             }

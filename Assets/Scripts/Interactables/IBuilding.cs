@@ -19,32 +19,34 @@ namespace DRC.RTS.Interactables
         public BuildingStatTypes.Base baseStats;
         public BuildingData buildingType;
         public List<Transform> workers = new List<Transform>();
-        protected bool isConstructed;
+        [SerializeField] protected bool isConstructed = false;
         protected bool beingConstructed;
         [SerializeField] protected float progression = 0;
 
         private void Start()
         {
             baseStats = buildingType.baseStats;
+            if (!isConstructed) progression = 0;
         }
         private void OnEnable()
         {
             gameObject.name = buildingType.name;
+            isConstructed = false;
+            progression = 0;
         }
         public override void OnInteractEnter()
         {
-            if (!isConstructed) return;
-            InputManager.InputHandler.instance.selectedBuilding.GetComponent<PlayerBuilding>().SetSpawnLocation(spawnMarker);
-            spawnMarkerGraphics.SetActive(true);
             base.OnInteractEnter();
         }
 
         public override void OnInteractExit()
         {
-            if (!isConstructed) return;
             UI.HUD.ActionFrame.instance.ClearActions();
             spawnMarkerGraphics.SetActive(false);
-            base.OnInteractExit();
+            HideHighlight();
+            if(isConstructed)
+                HideHpBar();
+            isInteracting = false;
         }
 
         public void SetSpawnMarkerLocation(Vector3 point)
@@ -54,31 +56,40 @@ namespace DRC.RTS.Interactables
 
         public IEnumerator Construct()
         {
-            beingConstructed = true;
+            var health = GetComponent<Health>();
+            //progression = (GetComponent<Health>().currentHealth / baseStats.health) * buildingType.constructionTime;
             do
             {
                 if (workers.Count == 0) break;
-                progression += (3 * buildingType.constructionTime / (workers.Count + 2)) * Time.deltaTime;
+                var prog = (3 / (workers.Count + 2)) * Time.deltaTime;
+                progression += prog;
+                health.SetHealing(health.maxHealth * prog / buildingType.constructionTime);
                 yield return null;
 
             } while (progression <= buildingType.constructionTime);
 
-            if(progression>= buildingType.constructionTime)
+            if(progression >= buildingType.constructionTime)
             {
                 isConstructed = true;
+                HideHpBar();
+                foreach (var worker in workers)
+                {
+                    worker.GetComponent<IUnit>().MoveToNextTarget();
+                }
                 workers.Clear();
             }
-            beingConstructed = false;
         }
 
         public void AddToConstructionWorkingQueue(Transform unit)
         {
+            if (workers.Contains(unit)) return;
             workers.Add(unit);
             if(!beingConstructed) StartCoroutine(Construct());
         }
 
         public void RemoveFromConstrcutionWorkingQueue(Transform unit)
         {
+            if (!workers.Contains(unit)) return;
             workers.Remove(unit);
         }
     }

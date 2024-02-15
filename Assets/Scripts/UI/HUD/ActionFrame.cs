@@ -3,7 +3,6 @@ using DRC.RTS.Buildings.Player;
 using DRC.RTS.InputManager;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -113,8 +112,8 @@ namespace DRC.RTS.UI.HUD
             if (IsBuilding(objectToSpawn))
             {
                 Buildings.BuildingData building = IsBuilding(objectToSpawn);
-                var obj = ObjectPoolManager.SpawnObject(building.buildingPrefab, Mouse.current.position.value, Quaternion.identity, ObjectPoolManager.PoolType.Ghost).GetComponent<GhostPlaceable>();
-                InputHandler.instance.BeginConstruction(obj.GetComponent<GhostPlaceable>());
+                var obj = ObjectPoolManager.SpawnObject(building.buildingPrefab, Mouse.current.position.value, Quaternion.identity, ObjectPoolManager.PoolType.GhostPlaceable).GetComponent<Buildings.GhostPlaceable>();
+                InputHandler.instance.BeginConstruction(obj.GetComponent<Buildings.GhostPlaceable>());
             }
             else
             {

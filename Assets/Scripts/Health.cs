@@ -1,9 +1,8 @@
 using DRC.RTS.Units.Player;
 using UnityEngine;
 using UnityEngine.UI;
-using DRC.RTS.Interactables;
 
-namespace DRC.RTS.Units
+namespace DRC.RTS.Interactables
 {
     [System.Serializable]
     public class Health : MonoBehaviour
@@ -12,7 +11,7 @@ namespace DRC.RTS.Units
         public bool dead;
         [SerializeField] private HealthBar hpBar;
 
-        public void SetupHealth()
+        public void SetupHealth(bool startingHealth = false)
         {
             if (gameObject.GetComponent<IUnit>())
             {
@@ -24,7 +23,12 @@ namespace DRC.RTS.Units
                 maxHealth = gameObject.GetComponent<IBuilding>().baseStats.health;
                 armor = gameObject.GetComponent<IBuilding>().baseStats.armor;
             }
-            currentHealth = maxHealth;
+            if (startingHealth)
+                currentHealth = 1;
+            else
+                currentHealth = maxHealth;
+
+            hpBar.UpdateHealthBar(maxHealth, currentHealth, true);
         }
 
         public virtual void SetDamage(float damage)
@@ -41,7 +45,7 @@ namespace DRC.RTS.Units
         public void SetHealing(float heal)
         {
             currentHealth += heal;
-            Mathf.Clamp(currentHealth, 0, maxHealth);
+            currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
             hpBar.UpdateHealthBar(maxHealth, currentHealth);
         }
         private void Die()
