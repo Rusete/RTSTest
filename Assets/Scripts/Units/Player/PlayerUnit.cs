@@ -52,9 +52,14 @@ namespace DRC.RTS.Units.Player
         public void MoveUnit(Vector3 destination, EUnitAction unitAction = EUnitAction.Move)
         {
             if (navAgent == null) navAgent = GetComponent<NavMeshAgent>();
-            if(action ==  EUnitAction.Repair)
+            if (target.Count() > 0)
             {
-                target[0].GetComponent<IBuilding>().RemoveFromConstrcutionWorkingQueue(transform);
+                var building = target[0].GetComponent<IBuilding>();
+                if (building)
+                {
+                    building.RemoveFromConstrcutionWorkingQueue(transform);
+                }
+                target.Clear();
             }
             navAgent.SetDestination(destination);
             action = unitAction;
@@ -62,11 +67,21 @@ namespace DRC.RTS.Units.Player
 
         public void MoveUnit(Transform newTarget, EUnitAction unitAction = EUnitAction.Move, bool multiTarget = false)
         {
-            if(!multiTarget)
-                target.Clear();
+            if (!multiTarget)
+            {
+                if(target.Count() > 0)
+                {
+                    var building = target[0].GetComponent<IBuilding>();
+                    if (building)
+                    {
+                        building.RemoveFromConstrcutionWorkingQueue(transform);
+                    }
+                    target.Clear();
+                }
+            }
             target.Add(newTarget);
             action = unitAction;
-            if (navAgent == null) navAgent=GetComponent<NavMeshAgent>();
+            if (navAgent == null) navAgent = GetComponent<NavMeshAgent>();
 
             Vector3 closestPointToTarget = target[0].position + (transform.position - target[0].position).normalized * navAgent.stoppingDistance;
             navAgent.SetDestination(closestPointToTarget);
