@@ -8,7 +8,7 @@ namespace DRC.RTS.Units
 {    public class UnitHandler : MonoBehaviour
     {
         public static UnitHandler instance;
-        [SerializeField] private BasicUnit worker, warrior, healer;
+        [SerializeField] private UnitData worker, warrior, healer;
 
         public LayerMask pUnitLayer, eUnitLayer;
 
@@ -19,7 +19,7 @@ namespace DRC.RTS.Units
 
         public UnitStatTypes.Base GetBasicUnitStats(string type)
         {
-            BasicUnit unit;
+            UnitData unit;
             switch (type)
             {
                 case "worker":

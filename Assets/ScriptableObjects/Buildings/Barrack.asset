@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   type: 0
   name: Barrack
-  buildingPrefab: {fileID: 5174576037535132491, guid: 472232c05172d7743b6870625b482980, type: 3}
-  icon: {fileID: 7798889640519381053, guid: 5119f8d788b8bf54e8dfe60768885052, type: 3}
+  buildingPrefab: {fileID: 7096297000724434320, guid: 32029922c2128fa43b9058e18a5b2e09, type: 3}
+  icon: {fileID: 260962546104737635, guid: 95b3d6ba16ac9fd43a7c35e650eb4e01, type: 3}
+  constructionTime: 5
   baseStats:
     health: 500
     armor: 25

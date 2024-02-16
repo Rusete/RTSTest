@@ -8,6 +8,8 @@ namespace DRC.RTS.Interactables
     {
         public bool isInteracting = false;
         public GameObject highlight = null;
+        public GameObject hpBar = null;
+        public UI.HUD.PlayerActions actions;
         public virtual void Awake()
         {
             highlight .SetActive(false);
@@ -15,13 +17,15 @@ namespace DRC.RTS.Interactables
 
         public virtual void OnInteractEnter()
         {
-            ShowHighlight();
             isInteracting = true;
+            ShowHighlight();
+            ShowHpbar();
         }
         public virtual void OnInteractExit()
         {
-            HideHighlight();
             isInteracting = false;
+            HideHighlight();
+            HideHpBar();
         }
         public virtual void ShowHighlight()
         {
@@ -29,7 +33,17 @@ namespace DRC.RTS.Interactables
         }
         public virtual void HideHighlight()
         {
+            if (isInteracting) return;
             highlight.SetActive(false);
+        }
+        public virtual void ShowHpbar()
+        {
+            hpBar.SetActive(true);
+        }
+        public virtual void HideHpBar()
+        {
+            if (isInteracting) return;
+            hpBar.SetActive(false);
         }
     }
 }

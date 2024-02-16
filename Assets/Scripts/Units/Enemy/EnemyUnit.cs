@@ -1,3 +1,4 @@
+using DRC.RTS.Buildings;
 using DRC.RTS.Interactables;
 using System.Collections;
 using System.Collections.Generic;
@@ -10,8 +11,6 @@ namespace DRC.RTS.Units.Enemy
     [RequireComponent(typeof(NavMeshAgent))]
     public class EnemyUnit : IUnit
     {
-        private NavMeshAgent navAgent;
-
         private Collider[] rangeColliders;
 
         private Transform aggroTarget;
@@ -49,10 +48,17 @@ namespace DRC.RTS.Units.Enemy
             for (int i = 0; i < rangeColliders.Length;)
             {
                 aggroTarget = rangeColliders[i].gameObject.transform;
-                aggroUnit = aggroTarget.gameObject.GetComponentInChildren<Health>();
-                print(rangeColliders.Count());
+                aggroUnit = aggroTarget.gameObject.GetComponent<Health>();
                 hasAggro = true;
-                break;
+                return;
+            }
+            rangeColliders = Physics.OverlapSphere(transform.position, baseStats.aggroRange, BuildingsHandler.instance.pBuildingLayer);
+            for (int i = 0; i < rangeColliders.Length;)
+            {
+                aggroTarget = rangeColliders[i].gameObject.transform;
+                aggroUnit = aggroTarget.gameObject.GetComponent<Health>();
+                hasAggro = true;
+                return;
             }
         }
 

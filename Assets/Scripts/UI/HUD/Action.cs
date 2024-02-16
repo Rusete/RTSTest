@@ -1,3 +1,4 @@
+using DRC.RTS.Buildings;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,19 +7,23 @@ namespace DRC.RTS.UI.HUD
 {
     public class Action : MonoBehaviour
     {
-        enum EActionType
+        public enum EActionType
         {
-            Spawn,
+            InstantiateUnit,
+            InstantiatBuilding,
             Improvement,
             InvestigateTechnology
         }
-        [SerializeField] private EActionType type;
+        public EActionType type;
         public void OnClick()
         {
             switch (type)
             {
-                case EActionType.Spawn:
+                case EActionType.InstantiateUnit:
                     ActionFrame.instance.StartSpawnTimer(name);
+                    break;
+                case EActionType.InstantiatBuilding:
+                    ActionFrame.instance.InstantiateBuildingConstruction(name);
                     break;
                 case EActionType.Improvement:
                     break;
