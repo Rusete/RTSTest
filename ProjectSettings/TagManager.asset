@@ -3,7 +3,11 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - PlayerUnits
+  - EnemyUnits
+  - PlayerBuildings
+  - EnemyBuildings
   layers:
   - Default
   - TransparentFX
@@ -13,10 +17,10 @@ TagManager:
   - UI
   - 
   - GroundLayer
-  - Interactables
+  - PlayerUnits
   - EnemyUnits
-  - 
-  - 
+  - PlayerBuildings
+  - EnemyBuildings
   - 
   - 
   - 

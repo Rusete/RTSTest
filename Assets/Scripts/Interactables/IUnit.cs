@@ -24,18 +24,26 @@ namespace DRC.RTS.Interactables
         }
         public EUnitAction action = EUnitAction.Wait;
 
+        private void OnEnable()
+        {
+            navAgent = GetComponent<NavMeshAgent>();
+        }
+        private void Start()
+        {
+            navAgent.stoppingDistance = navAgent.radius * 2;
+        }
         public void MoveToNextTarget()
         {
             target.RemoveAt(0);
             if (target.Count > 0)
             {
-                if (action == EUnitAction.Move)
-                {
-                    navAgent.SetDestination(target[0].position);
-                }
+                if (!target[0]) MoveToNextTarget();
                 else
                 {
-                    navAgent.SetDestination(target[0].GetComponent<Collider>().ClosestPoint(transform.position));
+                    if (navAgent == null) navAgent = GetComponent<NavMeshAgent>();
+
+                    Vector3 closestPointToTarget = target[0].position + (transform.position - target[0].position).normalized * navAgent.stoppingDistance;
+                    navAgent.SetDestination(closestPointToTarget);
                 }
             }
             else

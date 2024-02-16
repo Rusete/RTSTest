@@ -1,3 +1,4 @@
+using DRC.RPG.Utils;
 using DRC.RTS.Units.Player;
 using UnityEngine;
 using UnityEngine.UI;
@@ -35,6 +36,7 @@ namespace DRC.RTS.Interactables
         {
             currentHealth -= damage;
             currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+            GetComponent<Interactable>().ShowHpbar();
             hpBar.UpdateHealthBar(maxHealth, currentHealth);
             if (currentHealth == 0)
             {
@@ -47,6 +49,8 @@ namespace DRC.RTS.Interactables
             currentHealth += heal;
             currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
             hpBar.UpdateHealthBar(maxHealth, currentHealth);
+            if(currentHealth == maxHealth)
+                GetComponent<Interactable>().HideHpBar();
         }
         private void Die()
         {
@@ -54,12 +58,12 @@ namespace DRC.RTS.Interactables
             {
                 InputManager.InputHandler.instance.selectedUnits.Remove(transform);
                 //Hacer lo del Pool para despawnear
-                Destroy(gameObject);
+                ObjectPoolManager.ReturnObjectToPool(gameObject);
             }
             else
             {
                 //hacer lo del Pool para despawnear
-                Destroy(gameObject);
+                ObjectPoolManager.ReturnObjectToPool(gameObject);
             }
         }
     }

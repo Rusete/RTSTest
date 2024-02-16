@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 4507904978779303655}
   - component: {fileID: 6307271162478903409}
   - component: {fileID: 3569348655386145456}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -113,7 +113,7 @@ GameObject:
   - component: {fileID: 581083517155627439}
   - component: {fileID: 2559865794435085720}
   - component: {fileID: 2162273326613115492}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: RawImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -184,7 +184,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4187596009845291090}
   - component: {fileID: 1842599190821657400}
-  m_Layer: 8
+  m_Layer: 10
   m_Name: Highlight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -241,8 +241,8 @@ GameObject:
   - component: {fileID: 4334406494141771866}
   - component: {fileID: 3681674462206154988}
   - component: {fileID: 7124085115272975436}
-  m_Layer: 8
-  m_Name: Barracks
+  m_Layer: 10
+  m_Name: Barrack
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -357,8 +357,8 @@ MonoBehaviour:
   spawnMarkerGraphics: {fileID: 2983901803599461603}
   maxMarkerDistance: 10
   baseStats:
-    health: 0
-    armor: 0
+    health: 500
+    armor: 25
     attack: 0
   buildingType: {fileID: 11400000, guid: aa2d253042c52cc44a2fc53f2d7fbf1a, type: 2}
   workers: []
@@ -379,7 +379,7 @@ NavMeshObstacle:
   m_Shape: 1
   m_Extents: {x: 0.5, y: 0.5, z: 0.5}
   m_MoveThreshold: 0.1
-  m_Carve: 0
+  m_Carve: 1
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0, z: 0}
   m_TimeToStationary: 0.5
@@ -407,9 +407,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 694524da1bd316749b863318d4a9a992, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 0
-  armor: 0
-  currentHealth: 0
+  maxHealth: 500
+  armor: 25
+  currentHealth: 1
   dead: 0
   hpBar: {fileID: 3392396252090462826}
 --- !u!1 &6715243303469305856
@@ -421,7 +421,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5611073978725734568}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: SpawnMarker
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -452,9 +452,25 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1593672964854203568}
     m_Modifications:
+    - target: {fileID: 235958114061106903, guid: f5e8e66e31d61884fb9777403a194665, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 1039298933785183942, guid: f5e8e66e31d61884fb9777403a194665, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 1953822723554053399, guid: f5e8e66e31d61884fb9777403a194665, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
     - target: {fileID: 2597547099968232506, guid: f5e8e66e31d61884fb9777403a194665, type: 3}
       propertyPath: m_Name
       value: Canvas
+      objectReference: {fileID: 0}
+    - target: {fileID: 2597547099968232506, guid: f5e8e66e31d61884fb9777403a194665, type: 3}
+      propertyPath: m_Layer
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 2597547099968232506, guid: f5e8e66e31d61884fb9777403a194665, type: 3}
       propertyPath: m_IsActive
@@ -560,13 +576,29 @@ PrefabInstance:
       propertyPath: m_PresetInfoIsWorld
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6636539354725005505, guid: f5e8e66e31d61884fb9777403a194665, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 7264346484835462155, guid: f5e8e66e31d61884fb9777403a194665, type: 3}
+      propertyPath: target
+      value: 0.002
+      objectReference: {fileID: 0}
     - target: {fileID: 7985527722220850243, guid: f5e8e66e31d61884fb9777403a194665, type: 3}
       propertyPath: m_Color.b
-      value: 0.11830664
+      value: 0.058137808
+      objectReference: {fileID: 0}
+    - target: {fileID: 7985527722220850243, guid: f5e8e66e31d61884fb9777403a194665, type: 3}
+      propertyPath: m_Color.g
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7985527722220850243, guid: f5e8e66e31d61884fb9777403a194665, type: 3}
       propertyPath: m_Color.r
-      value: 0
+      value: 0.990566
+      objectReference: {fileID: 0}
+    - target: {fileID: 7985527722220850243, guid: f5e8e66e31d61884fb9777403a194665, type: 3}
+      propertyPath: m_FillAmount
+      value: 0.002
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

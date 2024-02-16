@@ -1,3 +1,4 @@
+using DRC.RPG.Utils;
 using DRC.RTS.Interactables;
 using DRC.RTS.Player;
 using UnityEngine;
@@ -5,7 +6,6 @@ using UnityEngine.AI;
 
 namespace DRC.RTS.Buildings
 {
-    [RequireComponent(typeof(NavMeshObstacle))]
     public class GhostPlaceable : MonoBehaviour
     {
         [SerializeField] private Material placeableMaterial;
@@ -13,6 +13,7 @@ namespace DRC.RTS.Buildings
         Bounds bounds;
         [SerializeField] private LayerMask hitLayer;
         [SerializeField] MeshRenderer meshRenderer;
+        public GameObject buildingPrefab;
         private bool placeable;
 
         private void Awake()
@@ -40,19 +41,15 @@ namespace DRC.RTS.Buildings
             }
         }
 
-        public bool Place()
+        public GameObject Place()
         {
-            if (!placeable) return placeable;
-            transform.GetComponent<NavMeshObstacle>().enabled = true;
-            transform.GetComponent<Collider>().isTrigger = false;
-            transform.GetComponent<Interactable>().ShowHpbar();
-            var building = transform.GetComponent<IBuilding>();
-            building.enabled = true;
-            building.baseStats = Buildings.BuildingsHandler.instance.GetBasicBuildingStats(name);
-            GetComponent<Health>().SetupHealth(true);
-            transform.parent = PlayerManager.instance.playerBuildings.Find(name + "s");
-
-            return placeable;
+            if (!placeable) return null;
+            var building = ObjectPoolManager.SpawnObject(buildingPrefab, transform.position, transform.rotation, ObjectPoolManager.PoolType.Building);
+            building.GetComponent<Interactable>().ShowHpbar();
+            building.GetComponent<IBuilding>().baseStats = Buildings.BuildingsHandler.instance.GetBasicBuildingStats(buildingPrefab.name);
+            building.GetComponent<Health>().SetupHealth(true);
+            building.transform.parent = PlayerManager.instance.playerBuildings.Find(buildingPrefab.name + "s");
+            return building;
         }
 
         bool IsPositionOccupied(Vector3 position, Bounds bounds)

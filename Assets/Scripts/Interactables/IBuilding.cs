@@ -43,10 +43,10 @@ namespace DRC.RTS.Interactables
         {
             UI.HUD.ActionFrame.instance.ClearActions();
             spawnMarkerGraphics.SetActive(false);
+            isInteracting = false;
             HideHighlight();
             if(isConstructed)
                 HideHpBar();
-            isInteracting = false;
         }
 
         public void SetSpawnMarkerLocation(Vector3 point)
@@ -57,7 +57,6 @@ namespace DRC.RTS.Interactables
         public IEnumerator Construct()
         {
             var health = GetComponent<Health>();
-            //progression = (GetComponent<Health>().currentHealth / baseStats.health) * buildingType.constructionTime;
             do
             {
                 if (workers.Count == 0) break;
@@ -80,11 +79,35 @@ namespace DRC.RTS.Interactables
             }
         }
 
+        public IEnumerator Repair()
+        {
+            var health = GetComponent<Health>();
+            do
+            {
+                if (workers.Count == 0) break;
+                var prog = (3 / (workers.Count + 2)) * Time.deltaTime;
+                health.SetHealing(health.maxHealth * prog / buildingType.constructionTime);
+                yield return null;
+
+            } while (health.currentHealth == health.maxHealth);
+
+            if (health.maxHealth == health.currentHealth)
+            {
+                HideHpBar();
+                foreach (var worker in workers)
+                {
+                    worker.GetComponent<IUnit>().MoveToNextTarget();
+                }
+                workers.Clear();
+            }
+        }
+
         public void AddToConstructionWorkingQueue(Transform unit)
         {
             if (workers.Contains(unit)) return;
             workers.Add(unit);
-            if(!beingConstructed) StartCoroutine(Construct());
+            if (!beingConstructed) StartCoroutine(Construct());
+            else StartCoroutine(Repair());
         }
 
         public void RemoveFromConstrcutionWorkingQueue(Transform unit)

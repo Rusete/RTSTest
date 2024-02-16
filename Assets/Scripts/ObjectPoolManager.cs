@@ -12,11 +12,13 @@ namespace DRC.RPG.Utils
         private GameObject _objectPoolEmptyHolder;
         private static GameObject _gameObjectsEmpty;
         private static GameObject _gameObjectsGhost;
+        private static GameObject _gameObjectsBuildings;
         public enum PoolType
         {
             GameObject,
             None,
             GhostPlaceable,
+            Building,
             Agent
         }
 
@@ -31,9 +33,11 @@ namespace DRC.RPG.Utils
             _objectPoolEmptyHolder = new GameObject("Pool Objects");
 
             _gameObjectsEmpty = new GameObject("GameObject");
-            _gameObjectsGhost = new GameObject("Buildings");
+            _gameObjectsGhost = new GameObject("Ghost");
+            _gameObjectsBuildings = new GameObject("Buildings");
             _gameObjectsEmpty.transform.SetParent(_objectPoolEmptyHolder.transform);
             _gameObjectsGhost.transform.SetParent(_objectPoolEmptyHolder.transform);
+            _gameObjectsBuildings.transform.SetParent(_objectPoolEmptyHolder.transform);
         }
 
         public static GameObject SpawnObject(GameObject objectToSpawn, Vector3 spawnPosition, Quaternion spawnRotation, PoolType poolType = PoolType.None)

@@ -17,15 +17,15 @@ namespace DRC.RTS.Interactables
 
         public virtual void OnInteractEnter()
         {
+            isInteracting = true;
             ShowHighlight();
             ShowHpbar();
-            isInteracting = true;
         }
         public virtual void OnInteractExit()
         {
+            isInteracting = false;
             HideHighlight();
             HideHpBar();
-            isInteracting = false;
         }
         public virtual void ShowHighlight()
         {
@@ -33,6 +33,7 @@ namespace DRC.RTS.Interactables
         }
         public virtual void HideHighlight()
         {
+            if (isInteracting) return;
             highlight.SetActive(false);
         }
         public virtual void ShowHpbar()
@@ -41,6 +42,7 @@ namespace DRC.RTS.Interactables
         }
         public virtual void HideHpBar()
         {
+            if (isInteracting) return;
             hpBar.SetActive(false);
         }
     }

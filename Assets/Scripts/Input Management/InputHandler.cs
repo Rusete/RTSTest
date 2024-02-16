@@ -8,6 +8,7 @@ using System.Linq;
 using UnityEngine.EventSystems;
 using DRC.RPG.Utils;
 using DRC.RTS.UI.HUD;
+using UnityEngine.AI;
 
 namespace DRC.RTS.InputManager
 {
@@ -81,6 +82,7 @@ namespace DRC.RTS.InputManager
                 Mouse.current.position.y.value >= Screen.height - mMarginY ||
                 Mouse.current.position.y.value <= mMarginY)
             {
+#if !UNITY_EDITOR
                 // Calcula la dirección en la que mover la cámara
                 Vector3 movementDirection = Vector3.zero;
 
@@ -96,6 +98,7 @@ namespace DRC.RTS.InputManager
 
                 // Mueve la cámara
                 mainCamera.Translate(camMovementSpeed * Time.deltaTime * movementDirection.normalized);
+#endif
             }
             else
             {
@@ -115,6 +118,7 @@ namespace DRC.RTS.InputManager
                 {
                     return;
                 }
+                //if(NavMesh.Raycast(ray.origin, ray.direction, out hit, interactableLayer.value))
                 if(Physics.Raycast(ray, out hit, Mathf.Infinity, interactableLayer))
                 {
                     if (AddedUnit(hit.transform, Keyboard.current.leftShiftKey.isPressed || Keyboard.current.leftCtrlKey.isPressed))
@@ -151,15 +155,22 @@ namespace DRC.RTS.InputManager
                 Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
                 if (Physics.Raycast(ray, out hit))
                 {
-                    LayerMask layerHit = hit.transform.gameObject.layer;
-
-                    switch (layerHit.value)
+                    switch (hit.transform.gameObject.layer)
                     {
                         case 8: //PlayerUnits Layer
                             // do something
                             break;
                         case 9: //EnemyUnits Layer
                             // attack or set target
+                            break;
+                        case 10:
+                            foreach (var unit in selectedUnits)
+                            {
+                                if (unit.GetComponent<Interactables.IUnit>().unitType.type == Units.UnitData.EUnitType.Worker)
+                                {
+                                    unit.GetComponent<Units.Player.PlayerUnit>().MoveUnit(hit.transform, Units.Player.PlayerUnit.EUnitAction.Repair);
+                                }
+                            }
                             break;
                         default:
                             if (PlayerManager.instance.formationBase != null)
@@ -306,24 +317,18 @@ namespace DRC.RTS.InputManager
             bool multiPlace = Keyboard.current.ctrlKey.isPressed;
             if (Mouse.current.leftButton.wasPressedThisFrame)
             {
-                GameObject building = placingObject.gameObject;
-                if (placingObject.Place())
+                GameObject building = placingObject.Place();
+                if (building)
                 {
                     foreach (var unit in selectedUnits)
                     {
                         if (unit.GetComponent<Interactables.IUnit>().unitType.type == Units.UnitData.EUnitType.Worker)
                         {
                             unit.GetComponent<Units.Player.PlayerUnit>().MoveUnit(building.transform, Units.Player.PlayerUnit.EUnitAction.Repair, multiPlace);
-                            //building.GetComponent<IBuilding>().AddToConstructionWorkingQueue(unit);
                         }
                     }
-                    if (multiPlace)
+                    if (!multiPlace)
                     {
-                        placingObject = ObjectPoolManager.SpawnObject(placingObject.gameObject, placingObject.transform.position, placingObject.transform.rotation, ObjectPoolManager.PoolType.GhostPlaceable).GetComponent<Buildings.GhostPlaceable>();
-                    }
-                    else
-                    {
-                        placingObject = null;
                         StopPlacingObject();
                     }
                 }

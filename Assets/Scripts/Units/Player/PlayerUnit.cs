@@ -9,10 +9,6 @@ namespace DRC.RTS.Units.Player
 {
     public class PlayerUnit : IUnit
     {
-        private void OnEnable()
-        {
-            navAgent = GetComponent<NavMeshAgent>();
-        }
         private void Start()
         {
             baseStats = unitType.baseStats;
@@ -37,7 +33,7 @@ namespace DRC.RTS.Units.Player
 
                         return;
                     }
-                    if (navAgent.remainingDistance <= navAgent.stoppingDistance)
+                    if (navAgent.remainingDistance <= navAgent.stoppingDistance && navAgent.velocity.magnitude == 0)
                     {
                         IBuilding build;
                         if (build = target[0].GetComponent<IBuilding>())
@@ -71,14 +67,9 @@ namespace DRC.RTS.Units.Player
             target.Add(newTarget);
             action = unitAction;
             if (navAgent == null) navAgent=GetComponent<NavMeshAgent>();
-            if (action == EUnitAction.Move)
-            {
-                navAgent.SetDestination(target[0].position);
-            }
-            else
-            {
-                navAgent.SetDestination(target[0].GetComponent<Collider>().ClosestPoint(transform.position));
-            }
+
+            Vector3 closestPointToTarget = target[0].position + (transform.position - target[0].position).normalized * navAgent.stoppingDistance;
+            navAgent.SetDestination(closestPointToTarget);
         }
 
         public override void OnInteractEnter()

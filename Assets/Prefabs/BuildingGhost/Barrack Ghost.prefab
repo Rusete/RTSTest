@@ -76,7 +76,11 @@ PrefabInstance:
       propertyPath: m_IsTrigger
       value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 7208737750941025647, guid: 472232c05172d7743b6870625b482980, type: 3}
+    - {fileID: 3681674462206154988, guid: 472232c05172d7743b6870625b482980, type: 3}
+    - {fileID: 7124085115272975436, guid: 472232c05172d7743b6870625b482980, type: 3}
+    - {fileID: 4334406494141771866, guid: 472232c05172d7743b6870625b482980, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
@@ -112,3 +116,4 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 128
   meshRenderer: {fileID: 240888044629762030}
+  buildingPrefab: {fileID: 5174576037535132491, guid: 472232c05172d7743b6870625b482980, type: 3}
