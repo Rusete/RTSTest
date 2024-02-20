@@ -33,7 +33,6 @@ namespace DRC.RTS.Interactables
         protected void Start()
         {
             navAgent.stoppingDistance = navAgent.radius * 4;
-            print(navAgent.stoppingDistance);
         }
 
         protected void Update()
@@ -57,16 +56,23 @@ namespace DRC.RTS.Interactables
             {
                 if (target.Count() > 0)
                 {
-                    Collider[] hitColliders = Physics.OverlapSphere(transform.position, navAgent.stoppingDistance + .5f);
-                    foreach (var hitCollider in hitColliders)
+                    // Eliminarse de la cola de construcción
+                    switch (unitType.type)
                     {
-                        var building = hitCollider.GetComponent<IBuilding>();
-                        if (building)
-                        {
-                            building.RemoveFromConstrcutionWorkingQueue(transform);
-                        }
+                        case UnitData.EUnitType.Worker:
+                            Collider[] hitColliders = Physics.OverlapSphere(transform.position, navAgent.stoppingDistance + .5f);
+                            foreach (var hitCollider in hitColliders)
+                            {
+                                var building = hitCollider.GetComponent<IBuilding>();
+                                if (building)
+                                {
+                                    building.RemoveFromConstrcutionWorkingQueue(transform);
+                                }
+                            }
+                        break;
                     }
                 }
+
                 target.Clear();
                 this.onArrivedAtPosition.Clear();
                 target.Add(position);
@@ -79,6 +85,12 @@ namespace DRC.RTS.Interactables
             {
                 target.Add(position);
                 this.onArrivedAtPosition.Add(onArrivedAtPosition);
+                if(target.Count() == 1)
+                {
+                    Vector3 closestPointToTarget = target[0] + (transform.position - target[0]).normalized * stopDistance;
+                    navAgent.SetDestination(closestPointToTarget);
+                    state = State.Moving;
+                }
             }
         }
 

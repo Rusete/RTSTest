@@ -334,7 +334,6 @@ namespace DRC.RTS.InputManager
                 GameObject building = placingObject.Place();
                 if (building)
                 {
-                    print(building);
                     foreach (var unit in selectedUnits)
                     {
                         if (unit.GetComponent<Interactables.IUnit>().unitType.type == Units.UnitData.EUnitType.Worker)
