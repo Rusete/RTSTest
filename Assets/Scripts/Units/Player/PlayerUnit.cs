@@ -9,13 +9,14 @@ namespace DRC.RTS.Units.Player
 {
     public class PlayerUnit : IUnit
     {
-        private void Start()
+        protected new void Start()
         {
             baseStats = unitType.baseStats;
             Units.UnitHandler.instance.GetBasicUnitStats(name.ToLower());
-            navAgent.stoppingDistance = navAgent.radius + navAgent.radius / 2;
+            base.Start();
+            // navAgent.stoppingDistance = navAgent.radius + navAgent.radius / 2;
             // GetComponent<Health>().SetupHealth();
-        }
+        }/*
         private void Update()
         {
             if (action == EUnitAction.Wait) return;
@@ -48,7 +49,7 @@ namespace DRC.RTS.Units.Player
                     break;
             }
         }
-
+        
         public void MoveUnit(Vector3 destination, EUnitAction unitAction = EUnitAction.Move)
         {
             if (navAgent == null) navAgent = GetComponent<NavMeshAgent>();
@@ -64,7 +65,6 @@ namespace DRC.RTS.Units.Player
             navAgent.SetDestination(destination);
             action = unitAction;
         }
-
         public void MoveUnit(Transform newTarget, EUnitAction unitAction = EUnitAction.Move, bool multiTarget = false)
         {
             if (!multiTarget)
@@ -85,7 +85,7 @@ namespace DRC.RTS.Units.Player
 
             Vector3 closestPointToTarget = target[0].position + (transform.position - target[0].position).normalized * navAgent.stoppingDistance;
             navAgent.SetDestination(closestPointToTarget);
-        }
+        }*/
 
         public override void OnInteractEnter()
         {

@@ -9,6 +9,7 @@ using UnityEngine.EventSystems;
 using DRC.RPG.Utils;
 using DRC.RTS.UI.HUD;
 using UnityEngine.AI;
+using DRC.RTS.Interactables;
 
 namespace DRC.RTS.InputManager
 {
@@ -163,12 +164,17 @@ namespace DRC.RTS.InputManager
                         case 9: //EnemyUnits Layer
                             // attack or set target
                             break;
-                        case 10:
+                        case 10: // Building Layer
                             foreach (var unit in selectedUnits)
                             {
                                 if (unit.GetComponent<Interactables.IUnit>().unitType.type == Units.UnitData.EUnitType.Worker)
                                 {
-                                    unit.GetComponent<Units.Player.PlayerUnit>().MoveUnit(hit.transform, Units.Player.PlayerUnit.EUnitAction.Repair);
+                                    unit.GetComponent<Units.Player.PlayerUnit>().MoveTo(hit.transform.position,
+                                        unit.GetComponent<NavMeshAgent>().stoppingDistance,
+                                        () => {
+                                            hit.transform.gameObject.GetComponent<IBuilding>().AddToConstructionWorkingQueue(unit);                                                
+                                        }
+                                    );
                                 }
                             }
                             break;
@@ -184,7 +190,11 @@ namespace DRC.RTS.InputManager
                                 for(int i =0; i < selectedUnits.Count(); i++)
                                 {
                                     Units.Player.PlayerUnit pU = selectedUnits.ElementAt(i).gameObject.GetComponent<Units.Player.PlayerUnit>();
-                                    pU.MoveUnit(relativePositions.ElementAt(i) + hit.point);
+                                    pU.MoveTo(relativePositions.ElementAt(i) + hit.point, 0, () =>
+                                    {
+                                        //set idle animation
+                                        print("hola");
+                                    });
                                 }
                             }
                             else
@@ -192,7 +202,11 @@ namespace DRC.RTS.InputManager
                                 for (int i = 0; i < selectedUnits.Count(); i++)
                                 {
                                     Units.Player.PlayerUnit pU = selectedUnits.ElementAt(i).gameObject.GetComponent<Units.Player.PlayerUnit>();
-                                    pU.MoveUnit(hit.point);
+                                    pU.MoveTo(hit.point, 0f, () =>
+                                    {
+                                        //set idle animation
+                                        print("hola");
+                                    });
                                 }
                             }
                             break;
@@ -320,11 +334,20 @@ namespace DRC.RTS.InputManager
                 GameObject building = placingObject.Place();
                 if (building)
                 {
+                    print(building);
                     foreach (var unit in selectedUnits)
                     {
                         if (unit.GetComponent<Interactables.IUnit>().unitType.type == Units.UnitData.EUnitType.Worker)
                         {
-                            unit.GetComponent<Units.Player.PlayerUnit>().MoveUnit(building.transform, Units.Player.PlayerUnit.EUnitAction.Repair, multiPlace);
+                            unit.GetComponent<Units.Player.PlayerUnit>().MoveTo(
+                                building.transform.position, 
+                                unit.gameObject.GetComponent<NavMeshAgent>().stoppingDistance,
+                                () =>
+                                {
+                                    building.GetComponent<IBuilding>().AddToConstructionWorkingQueue(unit);
+                                }, 
+                                multiPlace
+                                );
                         }
                     }
                     if (!multiPlace)

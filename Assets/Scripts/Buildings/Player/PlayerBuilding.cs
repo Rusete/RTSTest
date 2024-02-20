@@ -41,7 +41,13 @@ namespace DRC.RTS.Buildings.Player
 
             pU.baseStats = Units.UnitHandler.instance.GetBasicUnitStats(spawnedObject.name.ToLower());
             pU.GetComponent<Health>().SetupHealth();
-            spawnedObject.GetComponent<Units.Player.PlayerUnit>().MoveUnit(spawnPoint.transform.position, Units.Player.PlayerUnit.EUnitAction.Move);
+            spawnedObject.GetComponent<Units.Player.PlayerUnit>().MoveTo(spawnPoint.transform.position, 
+                0f,
+                () =>
+                {
+                    //Set Idle animation
+                }
+                );
             spawnOrder.Remove(spawnOrder[0]);
         }
 
