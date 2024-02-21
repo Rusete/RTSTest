@@ -105,6 +105,7 @@ namespace DRC.RTS.Interactables
         public void AddToConstructionWorkingQueue(Transform unit)
         {
             if (workers.Contains(unit)) return;
+            if (unit.GetComponent<IUnit>().unitType.type != UnitData.EUnitType.Worker) return;
             workers.Add(unit);
             if (!beingConstructed) StartCoroutine(Construct());
             else StartCoroutine(Repair());

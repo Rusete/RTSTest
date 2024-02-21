@@ -179,6 +179,9 @@ namespace DRC.RTS.InputManager
                             }
                             break;
                         default:
+                            // Ahora mismo todas las unidades forman.
+                            // Buscar la lógica para que los trabajadores no se unan a la formación
+                            // Ordenar unidades por rango en la lista
                             if (PlayerManager.instance.formationBase != null)
                             {
                                 var forward = (hit.point - selectedUnits.ElementAt(0).transform.position).normalized;
@@ -193,7 +196,6 @@ namespace DRC.RTS.InputManager
                                     pU.MoveTo(relativePositions.ElementAt(i) + hit.point, 0, () =>
                                     {
                                         //set idle animation
-                                        print("hola");
                                     });
                                 }
                             }
@@ -205,7 +207,6 @@ namespace DRC.RTS.InputManager
                                     pU.MoveTo(hit.point, 0f, () =>
                                     {
                                         //set idle animation
-                                        print("hola");
                                     });
                                 }
                             }
@@ -371,5 +372,36 @@ namespace DRC.RTS.InputManager
             PlayerManager.instance.playerState = PlayerManager.EPlayerState.selecting;
             isPlacing = false;
         }
+
+        public void FormateToPoints()
+        {
+            if (PlayerManager.instance.formationBase != null)
+            {
+                var forward = (hit.point - selectedUnits.ElementAt(0).transform.position).normalized;
+                var relativePositions = PlayerManager.instance.formationBase.EvaluatePoints(
+                    forward,
+                    selectedUnits.Count
+                );
+
+                for (int i = 0; i < selectedUnits.Count(); i++)
+                {
+                    Units.Player.PlayerUnit pU = selectedUnits.ElementAt(i).gameObject.GetComponent<Units.Player.PlayerUnit>();
+                    pU.MoveTo(relativePositions.ElementAt(i) + hit.point, 0, () =>
+                    {
+                        //set idle animation
+                    });
+                }
+            }
+            else
+            {
+                for (int i = 0; i < selectedUnits.Count(); i++)
+                {
+                    Units.Player.PlayerUnit pU = selectedUnits.ElementAt(i).gameObject.GetComponent<Units.Player.PlayerUnit>();
+                    pU.MoveTo(hit.point, 0f, () =>
+                    {
+                        //set idle animation
+                    });
+                }
+            }
     }
 }
