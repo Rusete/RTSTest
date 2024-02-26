@@ -403,5 +403,6 @@ namespace DRC.RTS.InputManager
                     });
                 }
             }
+        }
     }
 }
