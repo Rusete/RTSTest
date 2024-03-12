@@ -10,6 +10,7 @@ using DRC.RPG.Utils;
 using DRC.RTS.UI.HUD;
 using UnityEngine.AI;
 using DRC.RTS.Interactables;
+using static UnityEditor.FilePathAttribute;
 
 namespace DRC.RTS.InputManager
 {
@@ -169,10 +170,41 @@ namespace DRC.RTS.InputManager
                             {
                                 if (unit.GetComponent<Interactables.IUnit>().unitType.type == Units.UnitData.EUnitType.Worker)
                                 {
-                                    unit.GetComponent<Units.Player.PlayerUnit>().MoveTo(hit.transform.position,
-                                        unit.GetComponent<NavMeshAgent>().stoppingDistance,
+                                    var collider = hit.transform.GetComponent<Collider>();
+                                    if (!collider)
+                                    {
+                                        return; // nothing to do without a collider
+                                    }
+
+                                    Vector3 closestPoint = collider.ClosestPoint(unit.transform.position);
+                                    unit.GetComponent<Units.Player.PlayerUnit>().MoveTo(closestPoint,
+                                        unit.gameObject.GetComponent<NavMeshAgent>().stoppingDistance,
                                         () => {
                                             hit.transform.gameObject.GetComponent<IBuilding>().AddToConstructionWorkingQueue(unit);                                                
+                                        }
+                                    );
+                                }
+                            }
+                            break;
+                        case 11: // EnemyBuilding Layer
+                            break;
+                        case 12: // Node Layer
+                            print("gathering");
+                            foreach (var unit in selectedUnits)
+                            {
+                                if (unit.GetComponent<Interactables.IUnit>().unitType.type == Units.UnitData.EUnitType.Worker)
+                                {
+                                    var collider = hit.transform.GetComponent<Collider>();
+                                    if (!collider)
+                                    {
+                                        return; // nothing to do without a collider
+                                    }
+
+                                    Vector3 closestPoint = collider.ClosestPoint(unit.transform.position);
+                                    unit.GetComponent<Units.Player.PlayerUnit>().MoveTo(closestPoint,
+                                        unit.gameObject.GetComponent<NavMeshAgent>().stoppingDistance,
+                                        () => {
+                                            print("gathering");
                                         }
                                     );
                                 }

@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using DRC.RTS.Units;
-using static UnityEngine.GraphicsBuffer;
 using UnityEngine.AI;
 using System.Linq;
 
@@ -21,8 +20,8 @@ namespace DRC.RTS.Interactables
         protected NavMeshAgent navAgent;
         public UnitStatTypes.Base baseStats;
         public UnitData unitType;
-        protected List<Vector3> target = new();
-        private List<System.Action> onArrivedAtPosition = new();
+
+        protected List<PositionData> targets = new();
         private State state;
 
 
@@ -32,7 +31,8 @@ namespace DRC.RTS.Interactables
         }
         protected void Start()
         {
-            navAgent.stoppingDistance = navAgent.radius * 4;
+            //navAgent.stoppingDistance = navAgent.radius * 4;
+            navAgent.stoppingDistance = 0;
         }
 
         protected void Update()
@@ -54,7 +54,7 @@ namespace DRC.RTS.Interactables
         {
             if (!multiTarget)
             {
-                if (target.Count() > 0)
+                if (targets.Count() > 0)
                 {
                     // Eliminarse de la cola de construcción
                     switch (unitType.type)
@@ -73,22 +73,20 @@ namespace DRC.RTS.Interactables
                     }
                 }
 
-                target.Clear();
-                this.onArrivedAtPosition.Clear();
-                target.Add(position);
-                this.onArrivedAtPosition.Add(onArrivedAtPosition);
-                Vector3 closestPointToTarget = target[0] + (transform.position - target[0]).normalized * stopDistance;
-                navAgent.SetDestination(closestPointToTarget);
+                targets.Clear();
+
+                targets.Add(new PositionData { position = position, stopDistance = stopDistance, action = onArrivedAtPosition });
+
+                navAgent.SetDestination(targets[0].position);
                 state = State.Moving;
             }
             else
             {
-                target.Add(position);
-                this.onArrivedAtPosition.Add(onArrivedAtPosition);
-                if(target.Count() == 1)
+
+                targets.Add(new PositionData { position = position, stopDistance = stopDistance, action = onArrivedAtPosition });
+                if (targets.Count() == 1)
                 {
-                    Vector3 closestPointToTarget = target[0] + (transform.position - target[0]).normalized * stopDistance;
-                    navAgent.SetDestination(closestPointToTarget);
+                    navAgent.SetDestination(targets[0].position);
                     state = State.Moving;
                 }
             }
@@ -96,11 +94,10 @@ namespace DRC.RTS.Interactables
 
         public void MoveToNextTarget()
         {
-            target.RemoveAt(0);
-            onArrivedAtPosition.RemoveAt(0);
-            if (target.Count > 0)
+            targets.RemoveAt(0);
+            if (targets.Count > 0)
             {
-                Vector3 closestPointToTarget = target[0] + (transform.position - target[0]).normalized * navAgent.stoppingDistance;
+                Vector3 closestPointToTarget = targets[0].position + (transform.position - targets[0].position).normalized * targets[0].stopDistance;
                 navAgent.SetDestination(closestPointToTarget);
                 state = State.Moving;
             }
@@ -117,7 +114,7 @@ namespace DRC.RTS.Interactables
 
         private void HandleMovement()
         {
-            if (Vector3.Distance(transform.position, navAgent.destination) > navAgent.stoppingDistance)
+            if (Vector3.Distance(transform.position, navAgent.destination) > targets[0].stopDistance)
             {
                 // Vector3 moveDir = (targetPosition - transform.position).normalized;
 
@@ -129,13 +126,20 @@ namespace DRC.RTS.Interactables
             {
                 // Arrived
                 //animatedWalker.SetMoveVector(Vector3.zero);
-                if (onArrivedAtPosition.Count() > 0)
+                if (targets.Count() > 0 && targets[0].action != null)
                 {
-                    System.Action tmpAction = onArrivedAtPosition[0];
+                    System.Action tmpAction = targets[0].action;
                     state = State.Animating;
                     tmpAction();
                 }
             }
+        }
+
+        public struct PositionData
+        {
+            public Vector3 position;
+            public float stopDistance;
+            public System.Action action;
         }
     }
 }

@@ -107,10 +107,10 @@ RectTransform:
   - {fileID: 1106583678401922401}
   m_Father: {fileID: 3881786840179513589}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0}
-  m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 1, y: 0.14}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: -0.06999999}
+  m_SizeDelta: {x: 1, y: 0.13999999}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!1 &1953822723554053399
 GameObject:
@@ -200,6 +200,7 @@ GameObject:
   - component: {fileID: 5671885229966302695}
   - component: {fileID: 7075593763273883096}
   - component: {fileID: 7264346484835462155}
+  - component: {fileID: 8133992928024615367}
   m_Layer: 0
   m_Name: Canvas
   m_TagString: Untagged
@@ -335,6 +336,18 @@ MonoBehaviour:
     m_NumAlphaKeys: 2
   image: {fileID: 7985527722220850243}
   target: 1
+--- !u!114 &8133992928024615367
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2597547099968232506}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 16f28a3270c27e84c8d2f3cc3cb99660, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &6636539354725005505
 GameObject:
   m_ObjectHideFlags: 0
