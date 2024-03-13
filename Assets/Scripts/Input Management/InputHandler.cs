@@ -189,7 +189,6 @@ namespace DRC.RTS.InputManager
                         case 11: // EnemyBuilding Layer
                             break;
                         case 12: // Node Layer
-                            print("gathering");
                             foreach (var unit in selectedUnits)
                             {
                                 if (unit.GetComponent<Interactables.IUnit>().unitType.type == Units.UnitData.EUnitType.Worker)
@@ -199,12 +198,11 @@ namespace DRC.RTS.InputManager
                                     {
                                         return; // nothing to do without a collider
                                     }
-
                                     Vector3 closestPoint = collider.ClosestPoint(unit.transform.position);
                                     unit.GetComponent<Units.Player.PlayerUnit>().MoveTo(closestPoint,
                                         unit.gameObject.GetComponent<NavMeshAgent>().stoppingDistance,
                                         () => {
-                                            print("gathering");
+                                            StartCoroutine(unit.GetComponent<Interactables.IUnit>().Gather(hit.transform.parent.GetComponent<ResourceNode>()));
                                         }
                                     );
                                 }

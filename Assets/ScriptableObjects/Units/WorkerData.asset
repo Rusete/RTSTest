@@ -25,3 +25,6 @@ MonoBehaviour:
     attack: 5
     health: 5
     armor: 5
+    gatherCD: 2
+    gatheringCapacity: 10
+    gatherQuantity: 1

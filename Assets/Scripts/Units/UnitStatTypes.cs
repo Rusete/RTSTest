@@ -9,7 +9,8 @@ namespace DRC.RTS.Units
         [System.Serializable]
         public class Base
         {
-            public float cost, aggroRange, atkRange, atkSpeed, attack, health, armor;
+            public float cost, aggroRange, atkRange, atkSpeed, attack, health, armor, gatherCD;
+            public int gatheringCapacity, gatherQuantity;
         }
     }
 }

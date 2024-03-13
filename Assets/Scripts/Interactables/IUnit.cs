@@ -4,6 +4,7 @@ using UnityEngine;
 using DRC.RTS.Units;
 using UnityEngine.AI;
 using System.Linq;
+using Unity.VisualScripting;
 
 namespace DRC.RTS.Interactables
 {
@@ -23,7 +24,7 @@ namespace DRC.RTS.Interactables
 
         protected List<PositionData> targets = new();
         private State state;
-
+        private int resources = 0;
 
         private void OnEnable()
         {
@@ -31,8 +32,7 @@ namespace DRC.RTS.Interactables
         }
         protected void Start()
         {
-            //navAgent.stoppingDistance = navAgent.radius * 4;
-            navAgent.stoppingDistance = 0;
+            navAgent.stoppingDistance = navAgent.radius * 4;
         }
 
         protected void Update()
@@ -52,6 +52,7 @@ namespace DRC.RTS.Interactables
 
         public void MoveTo(Vector3 position, float stopDistance, System.Action onArrivedAtPosition, bool multiTarget = false)
         {
+            var stopD = stopDistance == 0 ? stopDistance : navAgent.stoppingDistance;
             if (!multiTarget)
             {
                 if (targets.Count() > 0)
@@ -72,10 +73,9 @@ namespace DRC.RTS.Interactables
                         break;
                     }
                 }
-
                 targets.Clear();
 
-                targets.Add(new PositionData { position = position, stopDistance = stopDistance, action = onArrivedAtPosition });
+                targets.Add(new PositionData { position = position, stopDistance = stopD, action = onArrivedAtPosition });
 
                 navAgent.SetDestination(targets[0].position);
                 state = State.Moving;
@@ -83,7 +83,7 @@ namespace DRC.RTS.Interactables
             else
             {
 
-                targets.Add(new PositionData { position = position, stopDistance = stopDistance, action = onArrivedAtPosition });
+                targets.Add(new PositionData { position = position, stopDistance = stopD, action = onArrivedAtPosition });
                 if (targets.Count() == 1)
                 {
                     navAgent.SetDestination(targets[0].position);
@@ -133,6 +133,22 @@ namespace DRC.RTS.Interactables
                     tmpAction();
                 }
             }
+        }
+
+        public IEnumerator Gather(ResourceNode node)
+        {
+            if (unitType.type == UnitData.EUnitType.Worker)
+            {
+                do
+                {
+                    var amount = baseStats.gatherQuantity;
+                    if (amount > baseStats.gatheringCapacity - resources) amount = baseStats.gatheringCapacity - resources;
+                    node.GatherResource(amount, this, out int gatheredResources);
+                    resources += gatheredResources;
+                    yield return new WaitForSeconds(baseStats.gatherCD);
+                } while (node && resources < baseStats.gatheringCapacity);
+            }
+            yield return null;
         }
 
         public struct PositionData
