@@ -45,7 +45,7 @@ namespace DRC.RTS.Buildings
         {
             if (!placeable) return null;
             var building = ObjectPoolManager.SpawnObject(buildingPrefab, transform.position, transform.rotation, ObjectPoolManager.PoolType.Building);
-            building.GetComponent<Interactable>().ShowHpbar();
+            building.GetComponent<SelectableBehaviour>().ShowHpbar();
             building.GetComponent<IBuilding>().baseStats = Buildings.BuildingsHandler.instance.GetBasicBuildingStats(buildingPrefab.name);
             building.GetComponent<Health>().SetupHealth(true);
             building.transform.parent = PlayerManager.instance.playerBuildings.Find(buildingPrefab.name + "s");

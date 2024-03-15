@@ -17,9 +17,10 @@ namespace DRC.RTS.Buildings.Player
         public GameObject spawnPoint = null;
         ActionTimer actionTimer;
 
-        private void Start()
+        private new void Start()
         {
             actionTimer = GetComponent<ActionTimer>();
+            base.Start();
         }
 
         public override void OnInteractEnter()

@@ -36,7 +36,7 @@ namespace DRC.RTS.Interactables
         {
             currentHealth -= damage;
             currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
-            GetComponent<Interactable>().ShowHpbar();
+            GetComponent<SelectableBehaviour>().ShowHpbar();
             hpBar.UpdateHealthBar(maxHealth, currentHealth);
             if (currentHealth == 0)
             {
@@ -50,13 +50,13 @@ namespace DRC.RTS.Interactables
             currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
             hpBar.UpdateHealthBar(maxHealth, currentHealth);
             if(currentHealth == maxHealth)
-                GetComponent<Interactable>().HideHpBar();
+                GetComponent<SelectableBehaviour>().HideHpBar();
         }
         private void Die()
         {
             if (GetComponentInParent<PlayerUnit>())
             {
-                InputManager.InputHandler.instance.selectedUnits.Remove(transform);
+                InputManager.InputHandler.Instance.selectedUnits.Remove(transform);
                 //Hacer lo del Pool para despawnear
                 ObjectPoolManager.ReturnObjectToPool(gameObject);
             }

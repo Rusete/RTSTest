@@ -68,7 +68,7 @@ namespace DRC.RTS.UI.HUD
             if (IsUnit(objectToSpawn))
             {
                 Units.UnitData unit = IsUnit(objectToSpawn);
-                InputManager.InputHandler.instance.selectedBuilding.GetComponent<PlayerBuilding>().AddSpawn(unit.spawnTime, unit.unitPrefab);
+                InputManager.InputHandler.Instance.selectedBuilding.GetComponent<PlayerBuilding>().AddSpawn(unit.spawnTime, unit.unitPrefab);
             }
             else
             {
@@ -113,7 +113,7 @@ namespace DRC.RTS.UI.HUD
             {
                 Buildings.BuildingData building = IsBuilding(objectToSpawn);
                 var obj = ObjectPoolManager.SpawnObject(building.buildingPrefab, Mouse.current.position.value, Quaternion.identity, ObjectPoolManager.PoolType.GhostPlaceable).GetComponent<Buildings.GhostPlaceable>();
-                InputHandler.instance.BeginConstruction(obj.GetComponent<Buildings.GhostPlaceable>());
+                InputHandler.Instance.BeginConstruction(obj.GetComponent<Buildings.GhostPlaceable>());
             }
             else
             {

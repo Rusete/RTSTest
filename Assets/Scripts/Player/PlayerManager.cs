@@ -38,17 +38,18 @@ namespace DRC.RTS.Player
 
         private void Update()
         {
+            /*
             switch (playerState)
             {
                 case EPlayerState.placing:
-                    InputHandler.instance.HandleGhost();
+                    InputHandler.Instance.HandleGhost();
                     break;
                 case EPlayerState.selecting:
-                    InputHandler.instance.HandleUnitMovement();
+                    InputHandler.Instance.HandleUnitMovement();
                     break;
 
             }
-            InputHandler.instance.HandleCamera();
+            InputHandler.Instance.HandleCamera();*/
         }
 
         public void SetBasicStats(Transform type)

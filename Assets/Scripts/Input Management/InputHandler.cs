@@ -10,22 +10,52 @@ using DRC.RPG.Utils;
 using DRC.RTS.UI.HUD;
 using UnityEngine.AI;
 using DRC.RTS.Interactables;
-using static UnityEditor.FilePathAttribute;
+using UnityEngine.Events;
 
 namespace DRC.RTS.InputManager
 {
     public class InputHandler : MonoBehaviour
     {
-        public static InputHandler instance;
 
+        public static InputHandler Instance { get; private set; }
+        private void Awake()
+        {
+            // If there is an instance, and it's not me, delete myself.
+
+            if (Instance != null && Instance != this)
+            {
+                Destroy(this);
+            }
+            else
+            {
+                Instance = this;
+            }
+        }
+        private void Update()
+        {
+            isPointerOverUI = EventSystem.current.IsPointerOverGameObject();
+            switch (eCurrentAction)
+            {
+                case EActions.Placing:
+                    Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.value);
+                    placingObject.UpdateGhostStatus(ray);
+                    break;
+            }
+        }
         private RaycastHit hit;
 
         public HashSet<Transform> selectedUnits = new();
         public Transform selectedBuilding = null;
         public LayerMask interactableLayer = new();
-
-        [SerializeField]private bool isDragging;
-        [SerializeField]private bool isPlacing;
+        private PlayerInputActions inputActions;
+        enum EActions
+        {
+            None,
+            Dragging,
+            Placing
+        }
+        EActions eCurrentAction = EActions.None;
+        private bool multi = false;
 
         private Vector3 mousePos;
         [SerializeField] Color colorRectangle;
@@ -38,30 +68,267 @@ namespace DRC.RTS.InputManager
         public float camRotSpeed = 50;
         public float mMarginX;
         public float mMarginY;
-
-        private void Awake()
-        {
-            instance = this;
-        }
         private void OnEnable()
         {
+            inputActions = new PlayerInputActions();
+            inputActions.Player.Enable();
             moveCameraAction.Enable();
+            inputActions.Player.LeftClick.started += OnLeftClickStarts;
+            inputActions.Player.LeftClick.canceled += OnLeftClickEnds;
+            inputActions.Player.RightClick.performed += OnRightClick;
+            inputActions.Player.Multi.started += OnMultiKey;
+            inputActions.Player.Multi.canceled += OnMultiKeyEnds;
+
+            SelectionBoxEnded ??= new UnityEvent();
         }
         private void OnDisable()
         {
             moveCameraAction.Disable();
+            inputActions.Player.LeftClick.started -= OnLeftClickStarts;
+            inputActions.Player.LeftClick.canceled -= OnLeftClickEnds;
+            inputActions.Player.RightClick.performed -= OnRightClick;
+            inputActions.Player.Multi.started -= OnMultiKey;
+            inputActions.Player.Multi.canceled -= OnMultiKeyEnds;
         }
+
         private void OnGUI()
         {
-            if (isPlacing) return;
-            if (isDragging)
+            switch (eCurrentAction)
             {
-                Rect rect = Selector.GetScreenRect(mousePos, Mouse.current.position.ReadValue());
-                Selector.DrawScreenRect(rect, colorRectangle);
-                Selector.DrawScreenRectBorder(rect, 3, colorRectangleBorder);
+                case EActions.None:
+                    break;
+                case EActions.Dragging:
+                    Rect rect = Selector.GetScreenRect(mousePos, Mouse.current.position.ReadValue());
+                    Selector.DrawScreenRect(rect, colorRectangle);
+                    Selector.DrawScreenRectBorder(rect, 3, colorRectangleBorder);
+                    break;
+                case EActions.Placing:
+                    break;
+            }
+        }
+        bool isPointerOverUI;
+        public void OnPointerEnterUI()
+        {
+            isPointerOverUI = true;
+        }
+
+        public void OnPointerExitUI()
+        {
+            isPointerOverUI = false;
+        }
+
+        private void OnLeftClickStarts(InputAction.CallbackContext context)
+        {
+            if (isPointerOverUI)
+                return;
+
+            switch (eCurrentAction)
+            {
+                case EActions.None:
+                    // Inicia selección
+                    eCurrentAction = EActions.Dragging;
+                    mousePos = Mouse.current.position.ReadValue();
+                    break;
+                case EActions.Dragging:
+                    if (!multi) DeselectUnits();
+                    eCurrentAction= EActions.None;
+                    break;
+                case EActions.Placing:
+                    GameObject building = placingObject.Place();
+                    if (building)
+                    {
+                        foreach (var unit in selectedUnits)
+                        {
+                            if (unit.GetComponent<Interactables.IUnit>().unitType.type == Units.UnitData.EUnitType.Worker)
+                            {
+                                unit.GetComponent<Units.Player.PlayerUnit>().MoveTo(
+                                    building.transform.position,
+                                    unit.gameObject.GetComponent<NavMeshAgent>().stoppingDistance,
+                                    () =>
+                                    {
+                                        building.GetComponent<IBuilding>().AddToConstructionWorkingQueue(unit);
+                                    },
+                                    multi
+                                    );
+                            }
+                        }
+                        if (!multi)
+                        {
+                            StopPlacingObject();
+                        }
+                    }
+                    else if (!multi)
+                    {
+                        StopPlacingObject();
+                    }
+                    break;
             }
         }
 
+        public UnityEvent SelectionBoxEnded;
+
+        public void OnLeftClickEnds(InputAction.CallbackContext context)
+        {
+            if (isPointerOverUI)
+                return;
+
+            switch (eCurrentAction)
+            {
+                case EActions.None:
+                    break;
+                case EActions.Dragging:
+                    Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
+
+                    // Finaliza seleccion
+                    eCurrentAction = EActions.None;
+                    SelectionBoxEnded.Invoke();
+                    break;
+                case EActions.Placing:
+                    if (!multi)
+                    {
+                        StopPlacingObject();
+                        eCurrentAction = EActions.None;
+                    }
+                    break;
+            }
+        }
+        private void OnRightClick(InputAction.CallbackContext context)
+        {
+            if (isPointerOverUI)
+                return;
+
+            switch (eCurrentAction)
+            {
+                case EActions.None:
+                    if (HasUnitsSelected())
+                    {
+                        HandleUnitsAction();
+                    }
+                    else if (selectedBuilding)
+                    {
+                        Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
+                        if (Physics.Raycast(ray, out hit))
+                        {
+                            selectedBuilding.gameObject.GetComponent<Interactables.IBuilding>().SetSpawnMarkerLocation(hit.point);
+
+                        }
+                    }
+                    break;
+                case EActions.Dragging:
+                    eCurrentAction = EActions.None;
+                    break;
+                case EActions.Placing:
+                    StopPlacingObject();
+                    eCurrentAction = EActions.None;
+                    break;
+            }            
+        }
+
+        private void HandleUnitsAction()
+        {
+            Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
+            if (Physics.Raycast(ray, out hit))
+            {
+                switch (hit.transform.gameObject.layer)
+                {
+                    case 8: //PlayerUnits Layer
+                            // do something
+                        break;
+                    case 9: //EnemyUnits Layer
+                            // attack or set target
+                        break;
+                    case 10: // Building Layer
+                        foreach (var unit in selectedUnits)
+                        {
+                            if (unit.GetComponent<Interactables.IUnit>().unitType.type == Units.UnitData.EUnitType.Worker)
+                            {
+                                var collider = hit.transform.GetComponent<Collider>();
+                                if (!collider)
+                                {
+                                    return; // nothing to do without a collider
+                                }
+
+                                Vector3 closestPoint = collider.ClosestPoint(unit.transform.position);
+                                unit.GetComponent<Units.Player.PlayerUnit>().MoveTo(closestPoint,
+                                    unit.gameObject.GetComponent<NavMeshAgent>().stoppingDistance,
+                                    () =>
+                                    {
+                                        hit.transform.gameObject.GetComponent<IBuilding>().AddToConstructionWorkingQueue(unit);
+                                    }
+                                );
+                            }
+                        }
+                        break;
+                    case 11: // EnemyBuilding Layer
+                        break;
+                    case 12: // Node Layer
+                        foreach (var unit in selectedUnits)
+                        {
+                            if (unit.GetComponent<Interactables.IUnit>().unitType.type == Units.UnitData.EUnitType.Worker)
+                            {
+                                var collider = hit.transform.GetComponent<Collider>();
+                                if (!collider)
+                                {
+                                    return; // nothing to do without a collider
+                                }
+                                Vector3 closestPoint = collider.ClosestPoint(unit.transform.position);
+                                unit.GetComponent<Units.Player.PlayerUnit>().MoveTo(closestPoint,
+                                    unit.gameObject.GetComponent<NavMeshAgent>().stoppingDistance,
+                                    () =>
+                                    {
+                                        StartCoroutine(unit.GetComponent<Interactables.IUnit>().Gather(hit.transform.parent.GetComponent<ResourceNode>()));
+                                    }
+                                );
+                            }
+                        }
+                        break;
+                    default:
+                        // Ahora mismo todas las unidades forman.
+                        // Buscar la lógica para que los trabajadores no se unan a la formación
+                        // Ordenar unidades por rango en la lista
+                        if (PlayerManager.instance.formationBase != null)
+                        {
+                            var forward = (hit.point - selectedUnits.ElementAt(0).transform.position).normalized;
+                            var relativePositions = PlayerManager.instance.formationBase.EvaluatePoints(
+                                forward,
+                                selectedUnits.Count
+                            );
+
+                            for (int i = 0; i < selectedUnits.Count(); i++)
+                            {
+                                Units.Player.PlayerUnit pU = selectedUnits.ElementAt(i).gameObject.GetComponent<Units.Player.PlayerUnit>();
+                                pU.MoveTo(relativePositions.ElementAt(i) + hit.point, 0, () =>
+                                {
+                                    //set idle animation
+                                });
+                            }
+                        }
+                        else
+                        {
+                            for (int i = 0; i < selectedUnits.Count(); i++)
+                            {
+                                Units.Player.PlayerUnit pU = selectedUnits.ElementAt(i).gameObject.GetComponent<Units.Player.PlayerUnit>();
+                                pU.MoveTo(hit.point, 0f, () =>
+                                {
+                                    //set idle animation
+                                });
+                            }
+                        }
+                        break;
+                }
+            }
+        }
+
+        private void OnMultiKey(InputAction.CallbackContext context)
+        {
+            multi = true;
+        }
+        private void OnMultiKeyEnds(InputAction.CallbackContext context)
+        {
+            multi = false;
+        }
+
+        // TODO ESTO DEBE CAMBIAR AL NUEVO INPUT ACTIONS CREADO ^^
         public void HandleCamera()
         {
             // Obtiene el vector de movimiento de la acción de entrada
@@ -112,147 +379,7 @@ namespace DRC.RTS.InputManager
         
         public void HandleUnitMovement()
         {
-            if (Mouse.current.leftButton.wasPressedThisFrame)
-            {
-                mousePos = Mouse.current.position.ReadValue();
-                Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
-                if (EventSystem.current.IsPointerOverGameObject())
-                {
-                    return;
-                }
-                //if(NavMesh.Raycast(ray.origin, ray.direction, out hit, interactableLayer.value))
-                if(Physics.Raycast(ray, out hit, Mathf.Infinity, interactableLayer))
-                {
-                    if (AddedUnit(hit.transform, Keyboard.current.leftShiftKey.isPressed || Keyboard.current.leftCtrlKey.isPressed))
-                    {
-                        //be able to do stuff with units
-                    }
-                    else if (AddedBuilding(hit.transform))
-                    {
-                         //be able to do stuff with building
-                    }
-                }
-                else if(!isPlacing)
-                {
-                    isDragging = true;
-                    if (!Keyboard.current.leftShiftKey.isPressed && !Keyboard.current.leftCtrlKey.isPressed) DeselectUnits();
-                }
-            }
-
-            if (Mouse.current.leftButton.wasReleasedThisFrame)
-            {
-                foreach(Transform child in Player.PlayerManager.instance.playerUnits)
-                {
-                    foreach(Transform unit in child)
-                    {
-                        if(IsWithinSelectionBounds(unit))
-                            AddedUnit(unit, true);
-                    }
-                }
-                isDragging = false;
-            }
-
-            if (Mouse.current.rightButton.wasPressedThisFrame && HasUnitsSelected())
-            {
-                Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
-                if (Physics.Raycast(ray, out hit))
-                {
-                    switch (hit.transform.gameObject.layer)
-                    {
-                        case 8: //PlayerUnits Layer
-                            // do something
-                            break;
-                        case 9: //EnemyUnits Layer
-                            // attack or set target
-                            break;
-                        case 10: // Building Layer
-                            foreach (var unit in selectedUnits)
-                            {
-                                if (unit.GetComponent<Interactables.IUnit>().unitType.type == Units.UnitData.EUnitType.Worker)
-                                {
-                                    var collider = hit.transform.GetComponent<Collider>();
-                                    if (!collider)
-                                    {
-                                        return; // nothing to do without a collider
-                                    }
-
-                                    Vector3 closestPoint = collider.ClosestPoint(unit.transform.position);
-                                    unit.GetComponent<Units.Player.PlayerUnit>().MoveTo(closestPoint,
-                                        unit.gameObject.GetComponent<NavMeshAgent>().stoppingDistance,
-                                        () => {
-                                            hit.transform.gameObject.GetComponent<IBuilding>().AddToConstructionWorkingQueue(unit);                                                
-                                        }
-                                    );
-                                }
-                            }
-                            break;
-                        case 11: // EnemyBuilding Layer
-                            break;
-                        case 12: // Node Layer
-                            foreach (var unit in selectedUnits)
-                            {
-                                if (unit.GetComponent<Interactables.IUnit>().unitType.type == Units.UnitData.EUnitType.Worker)
-                                {
-                                    var collider = hit.transform.GetComponent<Collider>();
-                                    if (!collider)
-                                    {
-                                        return; // nothing to do without a collider
-                                    }
-                                    Vector3 closestPoint = collider.ClosestPoint(unit.transform.position);
-                                    unit.GetComponent<Units.Player.PlayerUnit>().MoveTo(closestPoint,
-                                        unit.gameObject.GetComponent<NavMeshAgent>().stoppingDistance,
-                                        () => {
-                                            StartCoroutine(unit.GetComponent<Interactables.IUnit>().Gather(hit.transform.parent.GetComponent<ResourceNode>()));
-                                        }
-                                    );
-                                }
-                            }
-                            break;
-                        default:
-                            // Ahora mismo todas las unidades forman.
-                            // Buscar la lógica para que los trabajadores no se unan a la formación
-                            // Ordenar unidades por rango en la lista
-                            if (PlayerManager.instance.formationBase != null)
-                            {
-                                var forward = (hit.point - selectedUnits.ElementAt(0).transform.position).normalized;
-                                var relativePositions = PlayerManager.instance.formationBase.EvaluatePoints(
-                                    forward,
-                                    selectedUnits.Count
-                                );
-
-                                for(int i =0; i < selectedUnits.Count(); i++)
-                                {
-                                    Units.Player.PlayerUnit pU = selectedUnits.ElementAt(i).gameObject.GetComponent<Units.Player.PlayerUnit>();
-                                    pU.MoveTo(relativePositions.ElementAt(i) + hit.point, 0, () =>
-                                    {
-                                        //set idle animation
-                                    });
-                                }
-                            }
-                            else
-                            {
-                                for (int i = 0; i < selectedUnits.Count(); i++)
-                                {
-                                    Units.Player.PlayerUnit pU = selectedUnits.ElementAt(i).gameObject.GetComponent<Units.Player.PlayerUnit>();
-                                    pU.MoveTo(hit.point, 0f, () =>
-                                    {
-                                        //set idle animation
-                                    });
-                                }
-                            }
-                            break;
-                    }
-                }
-            }
-            else if (Mouse.current.rightButton.wasPressedThisFrame && selectedBuilding)
-            {
-                Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
-                if (Physics.Raycast(ray, out hit))
-                {
-                    selectedBuilding.gameObject.GetComponent<Interactables.IBuilding>().SetSpawnMarkerLocation(hit.point);
-
-                }
-            }
+            
         }
 
         private void TriggerSelectUnit(Transform unit)
@@ -286,13 +413,8 @@ namespace DRC.RTS.InputManager
             ActionFrame.instance.ClearActions();
         }
 
-        private bool IsWithinSelectionBounds(Transform tf)
+        public bool IsWithinSelectionBounds(Transform tf)
         {
-            if(!isDragging)
-            {
-                return false;
-            }
-
             Camera cam = Camera.main;
             Bounds vpBounds = Selector.GetViewportBounds(cam, mousePos, Mouse.current.position.ReadValue());
             return vpBounds.Contains(cam.WorldToViewportPoint(tf.position));
@@ -302,6 +424,17 @@ namespace DRC.RTS.InputManager
             return selectedUnits.Count() > 0;
         }
 
+        public void AddToSelection(Transform tf)
+        {
+            if(AddedUnit(tf, multi)){
+
+            }
+            else if (AddedBuilding(tf))
+            {
+
+            }
+            else { Debug.LogWarning("no es ni edificio ni unidad"); }
+        }
         private Interactables.IUnit AddedUnit(Transform tf, bool canMultiselect = false)
         {
             Interactables.IUnit iUnit = tf.GetComponent<Interactables.IUnit>();
@@ -345,62 +478,37 @@ namespace DRC.RTS.InputManager
         public void BeginConstruction(Buildings.GhostPlaceable objectToPlace)
         {
             placingObject = objectToPlace;
-            PlayerManager.instance.playerState = PlayerManager.EPlayerState.placing;
+            eCurrentAction = EActions.Placing;
         }
         public Buildings.GhostPlaceable placingObject;
+        /*
         public void HandleGhost()
         {
             Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.value);
             placingObject.UpdateGhostStatus(ray);
-            if (Mouse.current.leftButton.wasReleasedThisFrame)
-            {
-                isPlacing = true;
-                return;
-            }
-            if (!isPlacing) return;
 
-            bool multiPlace = Keyboard.current.ctrlKey.isPressed;
-            if (Mouse.current.leftButton.wasPressedThisFrame)
+            switch (eCurrentAction)
             {
-                GameObject building = placingObject.Place();
-                if (building)
-                {
-                    foreach (var unit in selectedUnits)
+                case EActions.Placing:
+
+                    bool multiPlace = Keyboard.current.ctrlKey.isPressed;
+                    if (Mouse.current.leftButton.wasPressedThisFrame)
                     {
-                        if (unit.GetComponent<Interactables.IUnit>().unitType.type == Units.UnitData.EUnitType.Worker)
-                        {
-                            unit.GetComponent<Units.Player.PlayerUnit>().MoveTo(
-                                building.transform.position, 
-                                unit.gameObject.GetComponent<NavMeshAgent>().stoppingDistance,
-                                () =>
-                                {
-                                    building.GetComponent<IBuilding>().AddToConstructionWorkingQueue(unit);
-                                }, 
-                                multiPlace
-                                );
-                        }
+                        // se mueve
                     }
-                    if (!multiPlace)
+                    if (Mouse.current.rightButton.wasPressedThisFrame || Keyboard.current.escapeKey.wasPressedThisFrame)
                     {
                         StopPlacingObject();
                     }
-                }
-                else if(!multiPlace)
-                {
-                    StopPlacingObject();
-                }
+                    break;
             }
-            if (Mouse.current.rightButton.wasPressedThisFrame || Keyboard.current.escapeKey.wasPressedThisFrame)
-            {
-                StopPlacingObject();
-            }
-        }
+        }*/
 
         private void StopPlacingObject()
         {
-            if(placingObject) ObjectPoolManager.ReturnObjectToPool(placingObject.gameObject);
+            if (!placingObject) return; 
+            ObjectPoolManager.ReturnObjectToPool(placingObject.gameObject);            
             PlayerManager.instance.playerState = PlayerManager.EPlayerState.selecting;
-            isPlacing = false;
         }
 
         public void FormateToPoints()
