@@ -48,7 +48,7 @@ namespace DRC.RTS.Buildings
             building.GetComponent<SelectableBehaviour>().ShowHpbar();
             building.GetComponent<IBuilding>().baseStats = Buildings.BuildingsHandler.instance.GetBasicBuildingStats(buildingPrefab.name);
             building.GetComponent<Health>().SetupHealth(true);
-            building.transform.parent = PlayerManager.instance.playerBuildings.Find(buildingPrefab.name + "s");
+            building.transform.parent = PlayerManager.Instance.playerBuildings.Find(buildingPrefab.name + "s");
             return building;
         }
 

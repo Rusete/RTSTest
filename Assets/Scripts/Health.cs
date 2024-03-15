@@ -1,6 +1,8 @@
 using DRC.RPG.Utils;
+using DRC.RTS.Player;
 using DRC.RTS.Units.Player;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace DRC.RTS.Interactables
@@ -12,6 +14,12 @@ namespace DRC.RTS.Interactables
         public bool dead;
         [SerializeField] private HealthBar hpBar;
 
+        public UnityEvent Killed;
+
+        private void Awake()
+        {
+            Killed ??= new UnityEvent();
+        }
         public void SetupHealth(bool startingHealth = false)
         {
             if (gameObject.GetComponent<IUnit>())
@@ -52,11 +60,11 @@ namespace DRC.RTS.Interactables
             if(currentHealth == maxHealth)
                 GetComponent<SelectableBehaviour>().HideHpBar();
         }
-        private void Die()
+        public void Die()
         {
             if (GetComponentInParent<PlayerUnit>())
             {
-                InputManager.InputHandler.Instance.selectedUnits.Remove(transform);
+                PlayerManager.Instance.RemoveFromSelection(transform);
                 //Hacer lo del Pool para despawnear
                 ObjectPoolManager.ReturnObjectToPool(gameObject);
             }

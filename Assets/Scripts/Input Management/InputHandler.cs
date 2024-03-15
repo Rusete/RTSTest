@@ -1,15 +1,7 @@
-using System.Collections;
-using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using DRC.RTS.Player;
-using System.Linq;
 using UnityEngine.EventSystems;
-using DRC.RPG.Utils;
-using DRC.RTS.UI.HUD;
-using UnityEngine.AI;
-using DRC.RTS.Interactables;
 using UnityEngine.Events;
 
 namespace DRC.RTS.InputManager
@@ -31,21 +23,20 @@ namespace DRC.RTS.InputManager
                 Instance = this;
             }
         }
+        public Ray ray { get; private set; }
         private void Update()
         {
-            isPointerOverUI = EventSystem.current.IsPointerOverGameObject();
             switch (eCurrentAction)
             {
                 case EActions.Placing:
-                    Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.value);
-                    placingObject.UpdateGhostStatus(ray);
+                    ray = Camera.main.ScreenPointToRay(Mouse.current.position.value);
                     break;
             }
+            isPointerOverUI = EventSystem.current.IsPointerOverGameObject();
         }
-        private RaycastHit hit;
+        RaycastHit hit;
+        public RaycastHit Hit { get { return hit; } }
 
-        public HashSet<Transform> selectedUnits = new();
-        public Transform selectedBuilding = null;
         public LayerMask interactableLayer = new();
         private PlayerInputActions inputActions;
         enum EActions
@@ -55,7 +46,7 @@ namespace DRC.RTS.InputManager
             Placing
         }
         EActions eCurrentAction = EActions.None;
-        private bool multi = false;
+        public bool Multi { get; private set; } = false;
 
         private Vector3 mousePos;
         [SerializeField] Color colorRectangle;
@@ -68,6 +59,8 @@ namespace DRC.RTS.InputManager
         public float camRotSpeed = 50;
         public float mMarginX;
         public float mMarginY;
+
+        public UnityEvent SelectionBoxEnded;
         private void OnEnable()
         {
             inputActions = new PlayerInputActions();
@@ -125,47 +118,19 @@ namespace DRC.RTS.InputManager
             switch (eCurrentAction)
             {
                 case EActions.None:
-                    // Inicia selección
+                    if (!Multi) PlayerManager.Instance.DeselectUnits();
                     eCurrentAction = EActions.Dragging;
                     mousePos = Mouse.current.position.ReadValue();
                     break;
                 case EActions.Dragging:
-                    if (!multi) DeselectUnits();
+                    if (!Multi) PlayerManager.Instance.DeselectUnits();
                     eCurrentAction= EActions.None;
                     break;
                 case EActions.Placing:
-                    GameObject building = placingObject.Place();
-                    if (building)
-                    {
-                        foreach (var unit in selectedUnits)
-                        {
-                            if (unit.GetComponent<Interactables.IUnit>().unitType.type == Units.UnitData.EUnitType.Worker)
-                            {
-                                unit.GetComponent<Units.Player.PlayerUnit>().MoveTo(
-                                    building.transform.position,
-                                    unit.gameObject.GetComponent<NavMeshAgent>().stoppingDistance,
-                                    () =>
-                                    {
-                                        building.GetComponent<IBuilding>().AddToConstructionWorkingQueue(unit);
-                                    },
-                                    multi
-                                    );
-                            }
-                        }
-                        if (!multi)
-                        {
-                            StopPlacingObject();
-                        }
-                    }
-                    else if (!multi)
-                    {
-                        StopPlacingObject();
-                    }
+                    PlayerManager.Instance.Construction(Multi);
                     break;
             }
         }
-
-        public UnityEvent SelectionBoxEnded;
 
         public void OnLeftClickEnds(InputAction.CallbackContext context)
         {
@@ -184,148 +149,47 @@ namespace DRC.RTS.InputManager
                     SelectionBoxEnded.Invoke();
                     break;
                 case EActions.Placing:
-                    if (!multi)
+                    if (!Multi)
                     {
-                        StopPlacingObject();
+                        PlayerManager.Instance.StopPlacingObject();
                         eCurrentAction = EActions.None;
                     }
                     break;
             }
         }
+
         private void OnRightClick(InputAction.CallbackContext context)
         {
-            if (isPointerOverUI)
-                return;
-
-            switch (eCurrentAction)
-            {
-                case EActions.None:
-                    if (HasUnitsSelected())
-                    {
-                        HandleUnitsAction();
-                    }
-                    else if (selectedBuilding)
-                    {
-                        Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
-                        if (Physics.Raycast(ray, out hit))
-                        {
-                            selectedBuilding.gameObject.GetComponent<Interactables.IBuilding>().SetSpawnMarkerLocation(hit.point);
-
-                        }
-                    }
-                    break;
-                case EActions.Dragging:
-                    eCurrentAction = EActions.None;
-                    break;
-                case EActions.Placing:
-                    StopPlacingObject();
-                    eCurrentAction = EActions.None;
-                    break;
-            }            
-        }
-
-        private void HandleUnitsAction()
-        {
             Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
-            if (Physics.Raycast(ray, out hit))
+            if (Physics.Raycast(ray, out hit) && Hit.transform.gameObject.layer != 5)
             {
-                switch (hit.transform.gameObject.layer)
+                switch (eCurrentAction)
                 {
-                    case 8: //PlayerUnits Layer
-                            // do something
+                    case EActions.None:
+                        PlayerManager.Instance.HandleRightClick(Hit.transform.gameObject.layer);
                         break;
-                    case 9: //EnemyUnits Layer
-                            // attack or set target
-                        break;
-                    case 10: // Building Layer
-                        foreach (var unit in selectedUnits)
-                        {
-                            if (unit.GetComponent<Interactables.IUnit>().unitType.type == Units.UnitData.EUnitType.Worker)
-                            {
-                                var collider = hit.transform.GetComponent<Collider>();
-                                if (!collider)
-                                {
-                                    return; // nothing to do without a collider
-                                }
 
-                                Vector3 closestPoint = collider.ClosestPoint(unit.transform.position);
-                                unit.GetComponent<Units.Player.PlayerUnit>().MoveTo(closestPoint,
-                                    unit.gameObject.GetComponent<NavMeshAgent>().stoppingDistance,
-                                    () =>
-                                    {
-                                        hit.transform.gameObject.GetComponent<IBuilding>().AddToConstructionWorkingQueue(unit);
-                                    }
-                                );
-                            }
-                        }
+                    case EActions.Dragging:
+                        eCurrentAction = EActions.None;
                         break;
-                    case 11: // EnemyBuilding Layer
-                        break;
-                    case 12: // Node Layer
-                        foreach (var unit in selectedUnits)
-                        {
-                            if (unit.GetComponent<Interactables.IUnit>().unitType.type == Units.UnitData.EUnitType.Worker)
-                            {
-                                var collider = hit.transform.GetComponent<Collider>();
-                                if (!collider)
-                                {
-                                    return; // nothing to do without a collider
-                                }
-                                Vector3 closestPoint = collider.ClosestPoint(unit.transform.position);
-                                unit.GetComponent<Units.Player.PlayerUnit>().MoveTo(closestPoint,
-                                    unit.gameObject.GetComponent<NavMeshAgent>().stoppingDistance,
-                                    () =>
-                                    {
-                                        StartCoroutine(unit.GetComponent<Interactables.IUnit>().Gather(hit.transform.parent.GetComponent<ResourceNode>()));
-                                    }
-                                );
-                            }
-                        }
-                        break;
-                    default:
-                        // Ahora mismo todas las unidades forman.
-                        // Buscar la lógica para que los trabajadores no se unan a la formación
-                        // Ordenar unidades por rango en la lista
-                        if (PlayerManager.instance.formationBase != null)
-                        {
-                            var forward = (hit.point - selectedUnits.ElementAt(0).transform.position).normalized;
-                            var relativePositions = PlayerManager.instance.formationBase.EvaluatePoints(
-                                forward,
-                                selectedUnits.Count
-                            );
 
-                            for (int i = 0; i < selectedUnits.Count(); i++)
-                            {
-                                Units.Player.PlayerUnit pU = selectedUnits.ElementAt(i).gameObject.GetComponent<Units.Player.PlayerUnit>();
-                                pU.MoveTo(relativePositions.ElementAt(i) + hit.point, 0, () =>
-                                {
-                                    //set idle animation
-                                });
-                            }
-                        }
-                        else
-                        {
-                            for (int i = 0; i < selectedUnits.Count(); i++)
-                            {
-                                Units.Player.PlayerUnit pU = selectedUnits.ElementAt(i).gameObject.GetComponent<Units.Player.PlayerUnit>();
-                                pU.MoveTo(hit.point, 0f, () =>
-                                {
-                                    //set idle animation
-                                });
-                            }
-                        }
+                    case EActions.Placing:
+                        PlayerManager.Instance.StopPlacingObject();
+                        eCurrentAction = EActions.None;
                         break;
                 }
-            }
+            }                      
         }
+
+        
 
         private void OnMultiKey(InputAction.CallbackContext context)
         {
-            multi = true;
+            Multi = true;
         }
         private void OnMultiKeyEnds(InputAction.CallbackContext context)
         {
-            multi = false;
+            Multi = false;
         }
 
         // TODO ESTO DEBE CAMBIAR AL NUEVO INPUT ACTIONS CREADO ^^
@@ -376,42 +240,6 @@ namespace DRC.RTS.InputManager
                 mainCamera.Translate(camMovementSpeed * Time.deltaTime * horizontalInput * Vector3.right);
             }
         }
-        
-        public void HandleUnitMovement()
-        {
-            
-        }
-
-        private void TriggerSelectUnit(Transform unit)
-        {
-            if (!unit.Find("Highlight").gameObject.activeInHierarchy)
-            {
-                selectedUnits.Add(unit);
-                // lets set an obj Highlight
-                unit.Find("Highlight").gameObject.SetActive(true);
-            }
-            else
-            {
-                selectedUnits.Remove(unit);
-                // lets set an obj Highlight
-                unit.Find("Highlight").gameObject.SetActive(false);
-            }
-        }
-
-        private void DeselectUnits()
-        {
-            if(selectedBuilding != null)
-            {
-                selectedBuilding.gameObject.GetComponent<Interactables.IBuilding>().OnInteractExit();
-                selectedBuilding = null;
-            }
-            for (int i = 0; i < selectedUnits.Count(); i ++) 
-            {
-                selectedUnits.ElementAt(i).gameObject.GetComponent<Interactables.IUnit>().OnInteractExit();
-            }
-            selectedUnits.Clear();
-            ActionFrame.instance.ClearActions();
-        }
 
         public bool IsWithinSelectionBounds(Transform tf)
         {
@@ -419,68 +247,10 @@ namespace DRC.RTS.InputManager
             Bounds vpBounds = Selector.GetViewportBounds(cam, mousePos, Mouse.current.position.ReadValue());
             return vpBounds.Contains(cam.WorldToViewportPoint(tf.position));
         }
-        private bool HasUnitsSelected()
+        public void PlacingState()
         {
-            return selectedUnits.Count() > 0;
-        }
-
-        public void AddToSelection(Transform tf)
-        {
-            if(AddedUnit(tf, multi)){
-
-            }
-            else if (AddedBuilding(tf))
-            {
-
-            }
-            else { Debug.LogWarning("no es ni edificio ni unidad"); }
-        }
-        private Interactables.IUnit AddedUnit(Transform tf, bool canMultiselect = false)
-        {
-            Interactables.IUnit iUnit = tf.GetComponent<Interactables.IUnit>();
-            if (iUnit)
-            {
-                if (!canMultiselect)
-                {
-                    DeselectUnits();
-                }
-
-                selectedUnits.Add(iUnit.gameObject.transform);
-
-                iUnit.OnInteractEnter();
-
-                return iUnit;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        private Interactables.IBuilding AddedBuilding(Transform tf)
-        {
-            Interactables.IBuilding iBuilding= tf.GetComponent<Interactables.IBuilding>();
-            if (iBuilding)
-            {
-                DeselectUnits();
-
-                selectedBuilding = iBuilding.gameObject.transform;
-
-                iBuilding.OnInteractEnter();
-
-                return iBuilding;
-            }
-            else
-            {
-                return null;
-            }
-        }
-        public void BeginConstruction(Buildings.GhostPlaceable objectToPlace)
-        {
-            placingObject = objectToPlace;
             eCurrentAction = EActions.Placing;
         }
-        public Buildings.GhostPlaceable placingObject;
         /*
         public void HandleGhost()
         {
@@ -503,44 +273,5 @@ namespace DRC.RTS.InputManager
                     break;
             }
         }*/
-
-        private void StopPlacingObject()
-        {
-            if (!placingObject) return; 
-            ObjectPoolManager.ReturnObjectToPool(placingObject.gameObject);            
-            PlayerManager.instance.playerState = PlayerManager.EPlayerState.selecting;
-        }
-
-        public void FormateToPoints()
-        {
-            if (PlayerManager.instance.formationBase != null)
-            {
-                var forward = (hit.point - selectedUnits.ElementAt(0).transform.position).normalized;
-                var relativePositions = PlayerManager.instance.formationBase.EvaluatePoints(
-                    forward,
-                    selectedUnits.Count
-                );
-
-                for (int i = 0; i < selectedUnits.Count(); i++)
-                {
-                    Units.Player.PlayerUnit pU = selectedUnits.ElementAt(i).gameObject.GetComponent<Units.Player.PlayerUnit>();
-                    pU.MoveTo(relativePositions.ElementAt(i) + hit.point, 0, () =>
-                    {
-                        //set idle animation
-                    });
-                }
-            }
-            else
-            {
-                for (int i = 0; i < selectedUnits.Count(); i++)
-                {
-                    Units.Player.PlayerUnit pU = selectedUnits.ElementAt(i).gameObject.GetComponent<Units.Player.PlayerUnit>();
-                    pU.MoveTo(hit.point, 0f, () =>
-                    {
-                        //set idle animation
-                    });
-                }
-            }
-        }
     }
 }

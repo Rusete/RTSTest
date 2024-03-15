@@ -1,3 +1,4 @@
+using DRC.RTS.Player;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
@@ -12,10 +13,11 @@ namespace DRC.RTS.Interactables
         public GameObject highlight = null;
         public GameObject hpBar = null;
         public UI.HUD.PlayerActions actions;
-
+        Health health;
         protected void Start()
         {
             InputManager.InputHandler.Instance.SelectionBoxEnded.AddListener(HandleLeftClickEnds);
+            health = GetComponent<Health>();
         }
         private void OnDisable()
         {
@@ -27,7 +29,7 @@ namespace DRC.RTS.Interactables
             if (InputManager.InputHandler.Instance.IsWithinSelectionBounds(transform))
             {
                 OnInteractEnter();
-                InputManager.InputHandler.Instance.AddToSelection(transform);
+                PlayerManager.Instance.AddToSelection(transform);
             }
             else if (isInteracting)
             {
@@ -51,6 +53,7 @@ namespace DRC.RTS.Interactables
             isInteracting = false;
             HideHighlight();
             HideHpBar();
+            health.Killed.RemoveAllListeners();
         }
         public virtual void ShowHighlight()
         {

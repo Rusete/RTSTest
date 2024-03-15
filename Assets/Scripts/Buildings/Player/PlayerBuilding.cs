@@ -36,7 +36,7 @@ namespace DRC.RTS.Buildings.Player
         }
         public void SpawnObject()
         {
-            GameObject spawnedObject = Instantiate(spawnOrder[0], spawnPoint.transform.parent.position, Quaternion.identity, PlayerManager.instance.playerUnits.Find(spawnOrder[0].name + "s"));
+            GameObject spawnedObject = Instantiate(spawnOrder[0], spawnPoint.transform.parent.position, Quaternion.identity, PlayerManager.Instance.playerUnits.Find(spawnOrder[0].name + "s"));
             spawnedObject.name = spawnOrder[0].name;
             Units.Player.PlayerUnit pU = spawnedObject.GetComponent<Units.Player.PlayerUnit>();
 

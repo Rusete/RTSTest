@@ -75,7 +75,6 @@ namespace DRC.RTS.Interactables
                     }
                 }
                 targets.Clear();
-                print(position);
                 targets.Add(new PositionData { position = position, stopDistance = stopD, action = onArrivedAtPosition });
 
                 navAgent.SetDestination(targets[0].position);
