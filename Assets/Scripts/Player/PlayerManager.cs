@@ -22,18 +22,14 @@ namespace DRC.RTS.Player
         public FormationBase formationBase = null;
 
         public Transform SelectedBuilding {  get; private set; } = null;
-        public HashSetListener<Transform> SelectedUnits { get; private set; } = new();
+        public HashSetListener SelectedUnits { get; private set; } = new();
         public Buildings.GhostPlaceable placingObject;
 
 
-        public enum EPlayerState
+        public InputHandler.EActions EPlayerAction
         {
-            Placing,
-            Selecting
+            get { return InputHandler.Instance.ECurrentAction; }
         }
-
-        public EPlayerState playerState = EPlayerState.Selecting;
-
         private void Awake()
         {
             Instance = this;
@@ -48,13 +44,15 @@ namespace DRC.RTS.Player
 
         private void Update()
         {
-            
-            switch (playerState)
+            print(SelectedUnits.Count());
+            switch (EPlayerAction)
             {
-                case EPlayerState.Placing:
+                case InputHandler.EActions.None:
+                    break;
+                case InputHandler.EActions.Placing:
                     placingObject.UpdateGhostStatus(InputHandler.Instance.ray);
                     break;
-                case EPlayerState.Selecting:
+                case InputHandler.EActions.Dragging:
                     break;
 
             }
@@ -92,7 +90,8 @@ namespace DRC.RTS.Player
                 }
             }
         }
-        public class HashSetListener<T> : HashSet<Transform>
+        [System.Serializable]
+        public class HashSetListener : HashSet<Transform>
         {
             public new bool Remove(Transform item)
             {
@@ -110,7 +109,7 @@ namespace DRC.RTS.Player
 
         public void AddToSelection(Transform tf)
         {
-            if (AddedUnit(tf, InputHandler.Instance.Multi))
+            if (AddedUnit(tf))
             {
                 tf.GetComponent<Interactables.Health>().Killed.AddListener(() =>
                 {
@@ -163,7 +162,6 @@ namespace DRC.RTS.Player
         {
             if (!placingObject) return;
             ObjectPoolManager.ReturnObjectToPool(placingObject.gameObject);
-            playerState = EPlayerState.Selecting;
         }
 
         public void HandleRightClick(int layer)
@@ -181,6 +179,7 @@ namespace DRC.RTS.Player
 
         private void HandleUnitsAction(int layer)
         {
+            var collider = InputHandler.Instance.Hit.transform.GetComponent<Collider>();
             switch (layer)
             {
                 case 8: //PlayerUnits Layer
@@ -192,17 +191,17 @@ namespace DRC.RTS.Player
                 case 10: // Building Layer
                     foreach (var unit in SelectedUnits)
                     {
-                        if (unit.GetComponent<Interactables.IUnit>().unitType.type == Units.UnitData.EUnitType.Worker)
+                        var pU = unit.GetComponent<Units.Player.PlayerUnit>();
+                        if (pU.unitType.type == Units.UnitData.EUnitType.Worker)
                         {
-                            var collider = InputHandler.Instance.Hit.transform.GetComponent<Collider>();
                             if (!collider)
                             {
                                 return; // nothing to do without a collider
                             }
 
                             Vector3 closestPoint = collider.ClosestPoint(unit.transform.position);
-                            unit.GetComponent<Units.Player.PlayerUnit>().MoveTo(closestPoint,
-                                unit.gameObject.GetComponent<NavMeshAgent>().stoppingDistance,
+                            pU.MoveTo(closestPoint,
+                                collider.bounds.size.magnitude + pU.MeleeStoppingStoppingDistance,
                                 () =>
                                 {
                                     InputHandler.Instance.Hit.transform.gameObject.GetComponent<Interactables.IBuilding>().AddToConstructionWorkingQueue(unit);
@@ -216,19 +215,19 @@ namespace DRC.RTS.Player
                 case 12: // Node Layer
                     foreach (var unit in SelectedUnits)
                     {
-                        if (unit.GetComponent<Interactables.IUnit>().unitType.type == Units.UnitData.EUnitType.Worker)
+                        var pU = unit.GetComponent<Units.Player.PlayerUnit>();
+                        if (pU.unitType.type == Units.UnitData.EUnitType.Worker)
                         {
-                            var collider = InputHandler.Instance.Hit.transform.GetComponent<Collider>();
                             if (!collider)
                             {
                                 return; // nothing to do without a collider
                             }
                             Vector3 closestPoint = collider.ClosestPoint(unit.transform.position);
-                            unit.GetComponent<Units.Player.PlayerUnit>().MoveTo(closestPoint,
-                                unit.gameObject.GetComponent<NavMeshAgent>().stoppingDistance,
+                            pU.MoveTo(closestPoint,
+                                collider.bounds.size.magnitude + pU.MeleeStoppingStoppingDistance,
                                 () =>
                                 {
-                                    StartCoroutine(unit.GetComponent<Interactables.IUnit>().Gather(InputHandler.Instance.Hit.transform.parent.GetComponent<ResourceNode>()));
+                                    StartCoroutine(pU.Gather(InputHandler.Instance.Hit.transform.GetComponent<ResourceNode>()));
                                 }
                             );
                         }
@@ -241,7 +240,7 @@ namespace DRC.RTS.Player
                     if (formationBase != null)
                     {
                         var forward = (InputHandler.Instance.Hit.point - SelectedUnits.ElementAt(0).transform.position).normalized;
-                        var relativePositions = PlayerManager.Instance.formationBase.EvaluatePoints(
+                        var relativePositions = formationBase.EvaluatePoints(
                             forward,
                             SelectedUnits.Count
                         );
@@ -284,19 +283,12 @@ namespace DRC.RTS.Player
             SelectedUnits.Clear();
             ActionFrame.instance.ClearActions();
         }
-        private Interactables.IUnit AddedUnit(Transform tf, bool canMultiselect = false)
+        private Interactables.IUnit AddedUnit(Transform tf)
         {
             Interactables.IUnit iUnit = tf.GetComponent<Interactables.IUnit>();
             if (iUnit)
             {
-                if (!canMultiselect)
-                {
-                    DeselectUnits();
-                }
-
                 SelectedUnits.Add(iUnit.gameObject.transform);
-
-                iUnit.OnInteractEnter();
 
                 return iUnit;
             }
@@ -359,7 +351,6 @@ namespace DRC.RTS.Player
         public void BeginToPlaceGhostBuilding(Buildings.GhostPlaceable objectToPlace)
         {
             placingObject = objectToPlace;
-            playerState = EPlayerState.Placing;
         }
     }
 }

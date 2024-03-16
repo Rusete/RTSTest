@@ -25,6 +25,7 @@ namespace DRC.RTS.Interactables
         protected List<PositionData> targets = new();
         private State state;
         private int resources = 0;
+        public float MeleeStoppingStoppingDistance { get; private set; }
 
         private void OnEnable()
         {
@@ -32,7 +33,8 @@ namespace DRC.RTS.Interactables
         }
         protected new void Start()
         {
-            navAgent.stoppingDistance = navAgent.radius * 4;
+            MeleeStoppingStoppingDistance = navAgent.radius;
+            navAgent.stoppingDistance = MeleeStoppingStoppingDistance;
             base.Start();
         }
 
@@ -120,12 +122,11 @@ namespace DRC.RTS.Interactables
 
                 // float distanceBefore = Vector3.Distance(transform.position, target[0].position);
                 // animatedWalker.SetMoveVector(moveDir);
-                //handle sprite
+                // handle sprite
             }
             else if (navAgent.velocity.magnitude == 0)
             {
                 // Arrived
-                //animatedWalker.SetMoveVector(Vector3.zero);
                 if (targets.Count() > 0 && targets[0].action != null)
                 {
                     System.Action tmpAction = targets[0].action;

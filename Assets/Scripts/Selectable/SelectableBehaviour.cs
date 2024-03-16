@@ -31,7 +31,7 @@ namespace DRC.RTS.Interactables
                 OnInteractEnter();
                 PlayerManager.Instance.AddToSelection(transform);
             }
-            else if (isInteracting)
+            else if (isInteracting && !InputManager.InputHandler.Instance.Multi)
             {
                 OnInteractExit();
             }

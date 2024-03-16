@@ -26,7 +26,7 @@ namespace DRC.RTS.InputManager
         public Ray ray { get; private set; }
         private void Update()
         {
-            switch (eCurrentAction)
+            switch (ECurrentAction)
             {
                 case EActions.Placing:
                     ray = Camera.main.ScreenPointToRay(Mouse.current.position.value);
@@ -39,13 +39,13 @@ namespace DRC.RTS.InputManager
 
         public LayerMask interactableLayer = new();
         private PlayerInputActions inputActions;
-        enum EActions
+        public enum EActions
         {
             None,
             Dragging,
             Placing
         }
-        EActions eCurrentAction = EActions.None;
+        public EActions ECurrentAction { get; private set; } = EActions.None;
         public bool Multi { get; private set; } = false;
 
         private Vector3 mousePos;
@@ -86,7 +86,7 @@ namespace DRC.RTS.InputManager
 
         private void OnGUI()
         {
-            switch (eCurrentAction)
+            switch (ECurrentAction)
             {
                 case EActions.None:
                     break;
@@ -115,16 +115,16 @@ namespace DRC.RTS.InputManager
             if (isPointerOverUI)
                 return;
 
-            switch (eCurrentAction)
+            switch (ECurrentAction)
             {
                 case EActions.None:
                     if (!Multi) PlayerManager.Instance.DeselectUnits();
-                    eCurrentAction = EActions.Dragging;
+                    ECurrentAction = EActions.Dragging;
                     mousePos = Mouse.current.position.ReadValue();
                     break;
                 case EActions.Dragging:
                     if (!Multi) PlayerManager.Instance.DeselectUnits();
-                    eCurrentAction= EActions.None;
+                    ECurrentAction= EActions.None;
                     break;
                 case EActions.Placing:
                     PlayerManager.Instance.Construction(Multi);
@@ -137,22 +137,20 @@ namespace DRC.RTS.InputManager
             if (isPointerOverUI)
                 return;
 
-            switch (eCurrentAction)
+            switch (ECurrentAction)
             {
                 case EActions.None:
                     break;
                 case EActions.Dragging:
-                    Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
-
                     // Finaliza seleccion
-                    eCurrentAction = EActions.None;
+                    ECurrentAction = EActions.None;
                     SelectionBoxEnded.Invoke();
                     break;
                 case EActions.Placing:
                     if (!Multi)
                     {
                         PlayerManager.Instance.StopPlacingObject();
-                        eCurrentAction = EActions.None;
+                        ECurrentAction = EActions.None;
                     }
                     break;
             }
@@ -163,19 +161,19 @@ namespace DRC.RTS.InputManager
             Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
             if (Physics.Raycast(ray, out hit) && Hit.transform.gameObject.layer != 5)
             {
-                switch (eCurrentAction)
+                switch (ECurrentAction)
                 {
                     case EActions.None:
                         PlayerManager.Instance.HandleRightClick(Hit.transform.gameObject.layer);
                         break;
 
                     case EActions.Dragging:
-                        eCurrentAction = EActions.None;
+                        ECurrentAction = EActions.None;
                         break;
 
                     case EActions.Placing:
                         PlayerManager.Instance.StopPlacingObject();
-                        eCurrentAction = EActions.None;
+                        ECurrentAction = EActions.None;
                         break;
                 }
             }                      
@@ -249,7 +247,7 @@ namespace DRC.RTS.InputManager
         }
         public void PlacingState()
         {
-            eCurrentAction = EActions.Placing;
+            ECurrentAction = EActions.Placing;
         }
         /*
         public void HandleGhost()
