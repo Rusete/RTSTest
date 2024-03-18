@@ -24,7 +24,7 @@ namespace DRC.RTS.Interactables
 
         protected List<PositionData> targets = new();
         private State state;
-        private int resources = 0;
+        private GatheringBag<GameResources.EResourceType, int> carryingResources;
         public float MeleeStoppingStoppingDistance { get; private set; }
 
         private void OnEnable()
@@ -142,12 +142,9 @@ namespace DRC.RTS.Interactables
             {
                 do
                 {
-                    var amount = baseStats.gatherQuantity;
-                    if (amount > baseStats.gatheringCapacity - resources) amount = baseStats.gatheringCapacity - resources;
-                    node.GatherResource(amount, this, out int gatheredResources);
-                    resources += gatheredResources;
+                    carryingResources.AddOrUpdate(node.GrabResource(), 1);
                     yield return new WaitForSeconds(baseStats.gatherCD);
-                } while (node && resources < baseStats.gatheringCapacity);
+                } while (node && carryingResources.TotalQuantity() < baseStats.gatheringCapacity);
             }
             yield return null;
         }
@@ -158,5 +155,25 @@ namespace DRC.RTS.Interactables
             public float stopDistance;
             public System.Action action;
         }
+    }
+
+    class GatheringBag<TKey, TValue> : Dictionary<GameResources.EResourceType, int>
+    {
+        public void AddOrUpdate(GameResources.EResourceType key, int value)
+        {
+            if (ContainsKey(key))
+            {
+                this[key]++;
+            }
+            else
+            {
+                Add(key, value);
+            }
+        }
+        public int TotalQuantity()
+        {
+            return Values.Sum();
+        }
+
     }
 }
