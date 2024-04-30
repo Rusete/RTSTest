@@ -8,6 +8,7 @@ using System.Linq;
 using UnityEngine.AI;
 using DRC.RPG.Utils;
 using DRC.RTS.UI.HUD;
+using UnityEngine.UI;
 
 namespace DRC.RTS.Player
 {
@@ -24,7 +25,7 @@ namespace DRC.RTS.Player
         public Transform SelectedBuilding {  get; private set; } = null;
         public HashSetListener SelectedUnits { get; private set; } = new();
         public Buildings.GhostPlaceable placingObject;
-
+        public List<Transform> storageBuildings;
 
         public InputHandler.EActions EPlayerAction
         {
@@ -40,11 +41,42 @@ namespace DRC.RTS.Player
             SetBasicStats(playerUnits);
             SetBasicStats(enemyUnits);
             SetBasicStats(playerBuildings);
+            InitializeStorageBuildings();
+        }
+
+        private void InitializeStorageBuildings()
+        {
+            GameObject[] storageObjects = GameObject.FindGameObjectsWithTag("Storage");
+            foreach (GameObject storageObject in storageObjects)
+            {
+                storageBuildings.Add(storageObject.transform);
+            }
+        }
+
+        public void AddToStorage(Storage storage)
+        {
+            storageBuildings.Add(storage.transform);
+        }
+
+        public Interactables.IBuilding FindClosestStorage(Vector3 position)
+        {
+            Transform closestStorage = null;
+            float shortestDistance = Mathf.Infinity;
+
+            foreach (Transform storage in storageBuildings)
+            {
+                float distance = Vector3.Distance(position, storage.position);
+                if (distance < shortestDistance)
+                {
+                    shortestDistance = distance;
+                    closestStorage = storage;
+                }
+            }
+            return closestStorage.GetComponent<Interactables.IBuilding>();
         }
 
         private void Update()
         {
-            print(SelectedUnits.Count());
             switch (EPlayerAction)
             {
                 case InputHandler.EActions.None:

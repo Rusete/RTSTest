@@ -8,7 +8,8 @@ public class GameResources
     public static event EventHandler OnResourceAmountChanged;
     public enum EResourceType
     {
-
+        Wood,
+        Rock
     }
 
 }

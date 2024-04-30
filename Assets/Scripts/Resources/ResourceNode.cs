@@ -1,4 +1,5 @@
 using DRC.RTS.Interactables;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -62,9 +63,11 @@ public class ResourceNode : MonoBehaviour
         yield return new WaitForSeconds(resourceAmount);
         resourceAmount = resourceAmountMax;
     }
+    /*
     public void GatherResource(int amount, IUnit gatheringUnit, out int gatheredResources)
     {
         resourceAmount -= amount;
+        print(resourceAmount);
 
         int amountToGive = amount;
         
@@ -81,7 +84,7 @@ public class ResourceNode : MonoBehaviour
         {
             onQuantityChange.Invoke();
         }
-    }
+    }*/
     public void Gather()
     {
         print("TO DO: Actualizar el display de recursos para que el jugador sepa cuántos recursos quedan en el nodo. Además se puede plantear un cambio de sprite para que visualmente se vea cómo reduce la cantidad de recurso");

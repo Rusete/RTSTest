@@ -8,6 +8,7 @@ TagManager:
   - EnemyUnits
   - PlayerBuildings
   - EnemyBuildings
+  - Storage
   layers:
   - Default
   - TransparentFX

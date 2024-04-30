@@ -5,6 +5,7 @@ using DRC.RTS.Units;
 using UnityEngine.AI;
 using System.Linq;
 using Unity.VisualScripting;
+using DRC.RTS.Player;
 
 namespace DRC.RTS.Interactables
 {
@@ -24,7 +25,7 @@ namespace DRC.RTS.Interactables
 
         protected List<PositionData> targets = new();
         private State state;
-        private GatheringBag<GameResources.EResourceType, int> carryingResources;
+        private GatheringBag<GameResources.EResourceType, int> carryingResources = new GatheringBag<GameResources.EResourceType, int>();
         public float MeleeStoppingStoppingDistance { get; private set; }
 
         private void OnEnable()
@@ -142,10 +143,26 @@ namespace DRC.RTS.Interactables
             {
                 do
                 {
+                    Debug.Log("Vamos a updatear");
+                    Debug.Log(node.resourceType);
                     carryingResources.AddOrUpdate(node.GrabResource(), 1);
+                    Debug.Log(carryingResources);
                     yield return new WaitForSeconds(baseStats.gatherCD);
                 } while (node && carryingResources.TotalQuantity() < baseStats.gatheringCapacity);
             }
+            IBuilding storage = PlayerManager.Instance.FindClosestStorage(transform.position);
+            Vector3 closestPoint = storage.GetComponent<Collider>().ClosestPoint(transform.position);
+            var stopD = navAgent.stoppingDistance;
+            PositionData dataResourceNode = targets[0];
+            MoveTo(
+                closestPoint, stopD, () =>
+                {
+                    Debug.Log("Devuelvo items recogidos");
+                    //  TODO:
+                    //  Llamar a la función de devolver recursos y luego invocar el MoveToNextTarget
+                }
+            );
+            targets.Add(targets[0]);
             yield return null;
         }
 
