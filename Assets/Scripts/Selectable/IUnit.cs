@@ -4,7 +4,6 @@ using UnityEngine;
 using DRC.RTS.Units;
 using UnityEngine.AI;
 using System.Linq;
-using Unity.VisualScripting;
 using DRC.RTS.Player;
 
 namespace DRC.RTS.Interactables
@@ -25,7 +24,8 @@ namespace DRC.RTS.Interactables
 
         protected List<PositionData> targets = new();
         private State state;
-        private GatheringBag<GameResources.EResourceType, int> carryingResources = new GatheringBag<GameResources.EResourceType, int>();
+        [SerializeField] 
+        private Resources.GatheringBag<Resources.GameResources.EResourceType, int> carryingResources = new Resources.GatheringBag<Resources.GameResources.EResourceType, int>();
         public float MeleeStoppingStoppingDistance { get; private set; }
 
         private void OnEnable()
@@ -137,33 +137,34 @@ namespace DRC.RTS.Interactables
             }
         }
 
-        public IEnumerator Gather(ResourceNode node)
+        public IEnumerator Gather(Resources.ResourceNode node)
         {
-            if (unitType.type == UnitData.EUnitType.Worker)
+            if (unitType.type == UnitData.EUnitType.Worker)            
             {
-                do
+                if (carryingResources.TotalQuantity() < baseStats.gatheringCapacity && node.QuantityRemaining() > 0)
                 {
-                    Debug.Log("Vamos a updatear");
-                    Debug.Log(node.resourceType);
-                    carryingResources.AddOrUpdate(node.GrabResource(), 1);
-                    Debug.Log(carryingResources);
-                    yield return new WaitForSeconds(baseStats.gatherCD);
-                } while (node && carryingResources.TotalQuantity() < baseStats.gatheringCapacity);
-            }
-            IBuilding storage = PlayerManager.Instance.FindClosestStorage(transform.position);
-            Vector3 closestPoint = storage.GetComponent<Collider>().ClosestPoint(transform.position);
-            var stopD = navAgent.stoppingDistance;
-            PositionData dataResourceNode = targets[0];
-            MoveTo(
-                closestPoint, stopD, () =>
-                {
-                    Debug.Log("Devuelvo items recogidos");
-                    //  TODO:
-                    //  Llamar a la función de devolver recursos y luego invocar el MoveToNextTarget
+                    do
+                    {
+                        carryingResources.AddOrUpdate(node.GrabResource(), 1);
+                        yield return new WaitForSeconds(baseStats.gatherCD);
+                    } while (node && carryingResources.TotalQuantity() < baseStats.gatheringCapacity && node.QuantityRemaining() > 0);
                 }
-            );
-            targets.Add(targets[0]);
-            yield return null;
+                IBuilding storage = PlayerManager.Instance.FindClosestStorage(transform.position);
+                Vector3 closestPoint = storage.GetComponent<Collider>().ClosestPoint(transform.position);
+                var stopD = navAgent.stoppingDistance;
+                PositionData dataResourceNode = targets[0];
+                var data = targets[0];
+                MoveTo(
+                    closestPoint, stopD, () =>
+                    {
+                        PlayerManager.Instance.StoreResources(carryingResources);
+                        carryingResources.Clear();
+                        if(node.QuantityRemaining() > 0)
+                            MoveTo(data.position, data.stopDistance, data.action);
+                    }
+                );
+                yield return null;
+            }            
         }
 
         public struct PositionData
@@ -172,25 +173,5 @@ namespace DRC.RTS.Interactables
             public float stopDistance;
             public System.Action action;
         }
-    }
-
-    class GatheringBag<TKey, TValue> : Dictionary<GameResources.EResourceType, int>
-    {
-        public void AddOrUpdate(GameResources.EResourceType key, int value)
-        {
-            if (ContainsKey(key))
-            {
-                this[key]++;
-            }
-            else
-            {
-                Add(key, value);
-            }
-        }
-        public int TotalQuantity()
-        {
-            return Values.Sum();
-        }
-
     }
 }

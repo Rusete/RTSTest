@@ -319,7 +319,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   resourceType: 0
-  resourceAmount: 10
+  resourceAmount: 25
   onQuantityChange:
     m_PersistentCalls:
       m_Calls:

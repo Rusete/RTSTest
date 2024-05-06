@@ -9,6 +9,7 @@ using UnityEngine.AI;
 using DRC.RPG.Utils;
 using DRC.RTS.UI.HUD;
 using UnityEngine.UI;
+using UnityEngine.Events;
 
 namespace DRC.RTS.Player
 {
@@ -26,6 +27,9 @@ namespace DRC.RTS.Player
         public HashSetListener SelectedUnits { get; private set; } = new();
         public Buildings.GhostPlaceable placingObject;
         public List<Transform> storageBuildings;
+
+
+        public Resources.GatheringBag<Resources.GameResources.EResourceType, int> storage = new();
 
         public InputHandler.EActions EPlayerAction
         {
@@ -259,7 +263,7 @@ namespace DRC.RTS.Player
                                 collider.bounds.size.magnitude + pU.MeleeStoppingStoppingDistance,
                                 () =>
                                 {
-                                    StartCoroutine(pU.Gather(InputHandler.Instance.Hit.transform.GetComponent<ResourceNode>()));
+                                    StartCoroutine(pU.Gather(InputHandler.Instance.Hit.transform.GetComponent<Resources.ResourceNode>()));
                                 }
                             );
                         }
@@ -383,6 +387,22 @@ namespace DRC.RTS.Player
         public void BeginToPlaceGhostBuilding(Buildings.GhostPlaceable objectToPlace)
         {
             placingObject = objectToPlace;
+        }
+
+        public void StoreResources(Resources.GatheringBag<Resources.GameResources.EResourceType, int> Resources)
+        {
+            Debug.Log("Se añade lo siguiente:");
+            foreach (KeyValuePair<Resources.GameResources.EResourceType, int> entry in Resources)
+            {
+                Debug.Log(entry.Key + ": " + entry.Value);
+                storage.AddOrUpdate(entry.Key, entry.Value);
+            }
+
+            Debug.Log("Total de recursos:");
+            foreach (KeyValuePair<Resources.GameResources.EResourceType, int> entry in storage)
+            {
+                Debug.Log(entry.Key+ ": " + entry.Value);
+            }
         }
     }
 }
