@@ -9,7 +9,8 @@ namespace DRC.RTS.Buildings
     {
         public enum EBuildingTypes
         {
-            Barracks
+            Barracks,
+            Storage
         }
 
         [Space(15)]
@@ -25,7 +26,7 @@ namespace DRC.RTS.Buildings
         [Header("Building Base Stats")]
         [Space(40)]
 
-        public BuildingStatTypes.Base baseStats;  
+        public BuildingStatTypes.Base baseStats;
     }
 }
 

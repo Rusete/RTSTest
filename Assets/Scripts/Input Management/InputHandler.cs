@@ -1,29 +1,52 @@
-using System.Collections;
-using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using DRC.RTS.Player;
-using System.Linq;
 using UnityEngine.EventSystems;
-using DRC.RPG.Utils;
-using DRC.RTS.UI.HUD;
-using UnityEngine.AI;
+using UnityEngine.Events;
 
 namespace DRC.RTS.InputManager
 {
     public class InputHandler : MonoBehaviour
     {
-        public static InputHandler instance;
 
-        private RaycastHit hit;
+        public static InputHandler Instance { get; private set; }
+        private void Awake()
+        {
+            // If there is an instance, and it's not me, delete myself.
 
-        public HashSet<Transform> selectedUnits = new();
-        public Transform selectedBuilding = null;
+            if (Instance != null && Instance != this)
+            {
+                Destroy(this);
+            }
+            else
+            {
+                Instance = this;
+            }
+        }
+        public Ray ray { get; private set; }
+        private void Update()
+        {
+            switch (ECurrentAction)
+            {
+                case EActions.Placing:
+                    ray = Camera.main.ScreenPointToRay(Mouse.current.position.value);
+                    break;
+            }
+            isPointerOverUI = EventSystem.current.IsPointerOverGameObject();
+        }
+        RaycastHit hit;
+        public RaycastHit Hit { get { return hit; } }
+
         public LayerMask interactableLayer = new();
-
-        [SerializeField]private bool isDragging;
-        [SerializeField]private bool isPlacing;
+        private PlayerInputActions inputActions;
+        public enum EActions
+        {
+            None,
+            Dragging,
+            Placing
+        }
+        public EActions ECurrentAction { get; private set; } = EActions.None;
+        public bool Multi { get; private set; } = false;
 
         private Vector3 mousePos;
         [SerializeField] Color colorRectangle;
@@ -37,29 +60,137 @@ namespace DRC.RTS.InputManager
         public float mMarginX;
         public float mMarginY;
 
-        private void Awake()
-        {
-            instance = this;
-        }
+        public UnityEvent SelectionBoxEnded;
         private void OnEnable()
         {
+            inputActions = new PlayerInputActions();
+            inputActions.Player.Enable();
             moveCameraAction.Enable();
+            inputActions.Player.LeftClick.started += OnLeftClickStarts;
+            inputActions.Player.LeftClick.canceled += OnLeftClickEnds;
+            inputActions.Player.RightClick.performed += OnRightClick;
+            inputActions.Player.Multi.started += OnMultiKey;
+            inputActions.Player.Multi.canceled += OnMultiKeyEnds;
+
+            SelectionBoxEnded ??= new UnityEvent();
         }
         private void OnDisable()
         {
             moveCameraAction.Disable();
+            inputActions.Player.LeftClick.started -= OnLeftClickStarts;
+            inputActions.Player.LeftClick.canceled -= OnLeftClickEnds;
+            inputActions.Player.RightClick.performed -= OnRightClick;
+            inputActions.Player.Multi.started -= OnMultiKey;
+            inputActions.Player.Multi.canceled -= OnMultiKeyEnds;
         }
+
         private void OnGUI()
         {
-            if (isPlacing) return;
-            if (isDragging)
+            switch (ECurrentAction)
             {
-                Rect rect = Selector.GetScreenRect(mousePos, Mouse.current.position.ReadValue());
-                Selector.DrawScreenRect(rect, colorRectangle);
-                Selector.DrawScreenRectBorder(rect, 3, colorRectangleBorder);
+                case EActions.None:
+                    break;
+                case EActions.Dragging:
+                    Rect rect = Selector.GetScreenRect(mousePos, Mouse.current.position.ReadValue());
+                    Selector.DrawScreenRect(rect, colorRectangle);
+                    Selector.DrawScreenRectBorder(rect, 3, colorRectangleBorder);
+                    break;
+                case EActions.Placing:
+                    break;
+            }
+        }
+        bool isPointerOverUI;
+        public void OnPointerEnterUI()
+        {
+            isPointerOverUI = true;
+        }
+
+        public void OnPointerExitUI()
+        {
+            isPointerOverUI = false;
+        }
+
+        private void OnLeftClickStarts(InputAction.CallbackContext context)
+        {
+            if (isPointerOverUI)
+                return;
+
+            switch (ECurrentAction)
+            {
+                case EActions.None:
+                    if (!Multi) PlayerManager.Instance.DeselectUnits();
+                    ECurrentAction = EActions.Dragging;
+                    mousePos = Mouse.current.position.ReadValue();
+                    break;
+                case EActions.Dragging:
+                    if (!Multi) PlayerManager.Instance.DeselectUnits();
+                    ECurrentAction= EActions.None;
+                    break;
+                case EActions.Placing:
+                    PlayerManager.Instance.Construction(Multi);
+                    break;
             }
         }
 
+        public void OnLeftClickEnds(InputAction.CallbackContext context)
+        {
+            if (isPointerOverUI)
+                return;
+
+            switch (ECurrentAction)
+            {
+                case EActions.None:
+                    break;
+                case EActions.Dragging:
+                    // Finaliza seleccion
+                    ECurrentAction = EActions.None;
+                    SelectionBoxEnded.Invoke();
+                    break;
+                case EActions.Placing:
+                    if (!Multi)
+                    {
+                        PlayerManager.Instance.StopPlacingObject();
+                        ECurrentAction = EActions.None;
+                    }
+                    break;
+            }
+        }
+
+        private void OnRightClick(InputAction.CallbackContext context)
+        {
+            Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
+            if (Physics.Raycast(ray, out hit) && Hit.transform.gameObject.layer != 5)
+            {
+                switch (ECurrentAction)
+                {
+                    case EActions.None:
+                        PlayerManager.Instance.HandleRightClick(Hit.transform.gameObject.layer);
+                        break;
+
+                    case EActions.Dragging:
+                        ECurrentAction = EActions.None;
+                        break;
+
+                    case EActions.Placing:
+                        PlayerManager.Instance.StopPlacingObject();
+                        ECurrentAction = EActions.None;
+                        break;
+                }
+            }                      
+        }
+
+        
+
+        private void OnMultiKey(InputAction.CallbackContext context)
+        {
+            Multi = true;
+        }
+        private void OnMultiKeyEnds(InputAction.CallbackContext context)
+        {
+            Multi = false;
+        }
+
+        // TODO ESTO DEBE CAMBIAR AL NUEVO INPUT ACTIONS CREADO ^^
         public void HandleCamera()
         {
             // Obtiene el vector de movimiento de la acción de entrada
@@ -107,247 +238,38 @@ namespace DRC.RTS.InputManager
                 mainCamera.Translate(camMovementSpeed * Time.deltaTime * horizontalInput * Vector3.right);
             }
         }
-        
-        public void HandleUnitMovement()
+
+        public bool IsWithinSelectionBounds(Transform tf)
         {
-            if (Mouse.current.leftButton.wasPressedThisFrame)
-            {
-                mousePos = Mouse.current.position.ReadValue();
-                Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
-                if (EventSystem.current.IsPointerOverGameObject())
-                {
-                    return;
-                }
-                //if(NavMesh.Raycast(ray.origin, ray.direction, out hit, interactableLayer.value))
-                if(Physics.Raycast(ray, out hit, Mathf.Infinity, interactableLayer))
-                {
-                    if (AddedUnit(hit.transform, Keyboard.current.leftShiftKey.isPressed || Keyboard.current.leftCtrlKey.isPressed))
-                    {
-                        //be able to do stuff with units
-                    }
-                    else if (AddedBuilding(hit.transform))
-                    {
-                         //be able to do stuff with building
-                    }
-                }
-                else if(!isPlacing)
-                {
-                    isDragging = true;
-                    if (!Keyboard.current.leftShiftKey.isPressed && !Keyboard.current.leftCtrlKey.isPressed) DeselectUnits();
-                }
-            }
-
-            if (Mouse.current.leftButton.wasReleasedThisFrame)
-            {
-                foreach(Transform child in Player.PlayerManager.instance.playerUnits)
-                {
-                    foreach(Transform unit in child)
-                    {
-                        if(IsWithinSelectionBounds(unit))
-                            AddedUnit(unit, true);
-                    }
-                }
-                isDragging = false;
-            }
-
-            if (Mouse.current.rightButton.wasPressedThisFrame && HasUnitsSelected())
-            {
-                Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
-                if (Physics.Raycast(ray, out hit))
-                {
-                    switch (hit.transform.gameObject.layer)
-                    {
-                        case 8: //PlayerUnits Layer
-                            // do something
-                            break;
-                        case 9: //EnemyUnits Layer
-                            // attack or set target
-                            break;
-                        case 10:
-                            foreach (var unit in selectedUnits)
-                            {
-                                if (unit.GetComponent<Interactables.IUnit>().unitType.type == Units.UnitData.EUnitType.Worker)
-                                {
-                                    unit.GetComponent<Units.Player.PlayerUnit>().MoveUnit(hit.transform, Units.Player.PlayerUnit.EUnitAction.Repair);
-                                }
-                            }
-                            break;
-                        default:
-                            if (PlayerManager.instance.formationBase != null)
-                            {
-                                var forward = (hit.point - selectedUnits.ElementAt(0).transform.position).normalized;
-                                var relativePositions = PlayerManager.instance.formationBase.EvaluatePoints(
-                                    forward,
-                                    selectedUnits.Count
-                                );
-
-                                for(int i =0; i < selectedUnits.Count(); i++)
-                                {
-                                    Units.Player.PlayerUnit pU = selectedUnits.ElementAt(i).gameObject.GetComponent<Units.Player.PlayerUnit>();
-                                    pU.MoveUnit(relativePositions.ElementAt(i) + hit.point);
-                                }
-                            }
-                            else
-                            {
-                                for (int i = 0; i < selectedUnits.Count(); i++)
-                                {
-                                    Units.Player.PlayerUnit pU = selectedUnits.ElementAt(i).gameObject.GetComponent<Units.Player.PlayerUnit>();
-                                    pU.MoveUnit(hit.point);
-                                }
-                            }
-                            break;
-                    }
-                }
-            }
-            else if (Mouse.current.rightButton.wasPressedThisFrame && selectedBuilding)
-            {
-                Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
-                if (Physics.Raycast(ray, out hit))
-                {
-                    selectedBuilding.gameObject.GetComponent<Interactables.IBuilding>().SetSpawnMarkerLocation(hit.point);
-
-                }
-            }
-        }
-
-        private void TriggerSelectUnit(Transform unit)
-        {
-            if (!unit.Find("Highlight").gameObject.activeInHierarchy)
-            {
-                selectedUnits.Add(unit);
-                // lets set an obj Highlight
-                unit.Find("Highlight").gameObject.SetActive(true);
-            }
-            else
-            {
-                selectedUnits.Remove(unit);
-                // lets set an obj Highlight
-                unit.Find("Highlight").gameObject.SetActive(false);
-            }
-        }
-
-        private void DeselectUnits()
-        {
-            if(selectedBuilding != null)
-            {
-                selectedBuilding.gameObject.GetComponent<Interactables.IBuilding>().OnInteractExit();
-                selectedBuilding = null;
-            }
-            for (int i = 0; i < selectedUnits.Count(); i ++) 
-            {
-                selectedUnits.ElementAt(i).gameObject.GetComponent<Interactables.IUnit>().OnInteractExit();
-            }
-            selectedUnits.Clear();
-            ActionFrame.instance.ClearActions();
-        }
-
-        private bool IsWithinSelectionBounds(Transform tf)
-        {
-            if(!isDragging)
-            {
-                return false;
-            }
-
             Camera cam = Camera.main;
             Bounds vpBounds = Selector.GetViewportBounds(cam, mousePos, Mouse.current.position.ReadValue());
             return vpBounds.Contains(cam.WorldToViewportPoint(tf.position));
         }
-        private bool HasUnitsSelected()
+        public void PlacingState()
         {
-            return selectedUnits.Count() > 0;
+            ECurrentAction = EActions.Placing;
         }
-
-        private Interactables.IUnit AddedUnit(Transform tf, bool canMultiselect = false)
-        {
-            Interactables.IUnit iUnit = tf.GetComponent<Interactables.IUnit>();
-            if (iUnit)
-            {
-                if (!canMultiselect)
-                {
-                    DeselectUnits();
-                }
-
-                selectedUnits.Add(iUnit.gameObject.transform);
-
-                iUnit.OnInteractEnter();
-
-                return iUnit;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        private Interactables.IBuilding AddedBuilding(Transform tf)
-        {
-            Interactables.IBuilding iBuilding= tf.GetComponent<Interactables.IBuilding>();
-            if (iBuilding)
-            {
-                DeselectUnits();
-
-                selectedBuilding = iBuilding.gameObject.transform;
-
-                iBuilding.OnInteractEnter();
-
-                return iBuilding;
-            }
-            else
-            {
-                return null;
-            }
-        }
-        public void BeginConstruction(Buildings.GhostPlaceable objectToPlace)
-        {
-            placingObject = objectToPlace;
-            PlayerManager.instance.playerState = PlayerManager.EPlayerState.placing;
-        }
-        public Buildings.GhostPlaceable placingObject;
+        /*
         public void HandleGhost()
         {
             Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.value);
             placingObject.UpdateGhostStatus(ray);
-            if (Mouse.current.leftButton.wasReleasedThisFrame)
-            {
-                isPlacing = true;
-                return;
-            }
-            if (!isPlacing) return;
 
-            bool multiPlace = Keyboard.current.ctrlKey.isPressed;
-            if (Mouse.current.leftButton.wasPressedThisFrame)
+            switch (eCurrentAction)
             {
-                GameObject building = placingObject.Place();
-                if (building)
-                {
-                    foreach (var unit in selectedUnits)
+                case EActions.Placing:
+
+                    bool multiPlace = Keyboard.current.ctrlKey.isPressed;
+                    if (Mouse.current.leftButton.wasPressedThisFrame)
                     {
-                        if (unit.GetComponent<Interactables.IUnit>().unitType.type == Units.UnitData.EUnitType.Worker)
-                        {
-                            unit.GetComponent<Units.Player.PlayerUnit>().MoveUnit(building.transform, Units.Player.PlayerUnit.EUnitAction.Repair, multiPlace);
-                        }
+                        // se mueve
                     }
-                    if (!multiPlace)
+                    if (Mouse.current.rightButton.wasPressedThisFrame || Keyboard.current.escapeKey.wasPressedThisFrame)
                     {
                         StopPlacingObject();
                     }
-                }
-                else if(!multiPlace)
-                {
-                    StopPlacingObject();
-                }
+                    break;
             }
-            if (Mouse.current.rightButton.wasPressedThisFrame || Keyboard.current.escapeKey.wasPressedThisFrame)
-            {
-                StopPlacingObject();
-            }
-        }
-
-        private void StopPlacingObject()
-        {
-            if(placingObject) ObjectPoolManager.ReturnObjectToPool(placingObject.gameObject);
-            PlayerManager.instance.playerState = PlayerManager.EPlayerState.selecting;
-            isPlacing = false;
-        }
+        }*/
     }
 }

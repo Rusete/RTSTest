@@ -12,7 +12,8 @@ namespace DRC.RTS.UI.HUD
             InstantiateUnit,
             InstantiatBuilding,
             Improvement,
-            InvestigateTechnology
+            InvestigateTechnology,
+            Formation
         }
         public EActionType type;
         public void OnClick()

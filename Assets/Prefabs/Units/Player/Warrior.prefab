@@ -198,7 +198,7 @@ MonoBehaviour:
   isInteracting: 0
   highlight: {fileID: 2631805481350979297}
   hpBar: {fileID: 2547997355797379494}
-  actions: {fileID: 0}
+  actions: {fileID: 11400000, guid: f3017f2cde5edf340a2ed7efecaa7475, type: 2}
   baseStats:
     cost: 0
     aggroRange: 0
@@ -207,8 +207,10 @@ MonoBehaviour:
     attack: 0
     health: 0
     armor: 0
+    gatherCD: 0
+    gatheringCapacity: 0
+    gatherQuantity: 0
   unitType: {fileID: 11400000, guid: 0e4b4f86bba60574fabf093b4b8dacd5, type: 2}
-  action: 4
 --- !u!114 &6668278270676930317
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -23,13 +23,15 @@ namespace DRC.RTS.Units.Enemy
 
         public float atkCooldown;
 
-        private void Start()
+        protected new void Start()
         {
             navAgent = GetComponent<NavMeshAgent>();
+            base.Start();
         }
 
-        private void Update()
+        protected new void Update()
         {
+            base.Update();
             atkCooldown -= Time.deltaTime;
             if (!hasAggro)
             {

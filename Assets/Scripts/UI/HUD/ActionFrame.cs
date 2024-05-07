@@ -1,9 +1,11 @@
 using DRC.RPG.Utils;
 using DRC.RTS.Buildings.Player;
 using DRC.RTS.InputManager;
+using DRC.RTS.Player;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
@@ -68,7 +70,7 @@ namespace DRC.RTS.UI.HUD
             if (IsUnit(objectToSpawn))
             {
                 Units.UnitData unit = IsUnit(objectToSpawn);
-                InputManager.InputHandler.instance.selectedBuilding.GetComponent<PlayerBuilding>().AddSpawn(unit.spawnTime, unit.unitPrefab);
+                PlayerManager.Instance.SelectedBuilding.GetComponent<PlayerBuilding>().AddSpawn(unit.spawnTime, unit.unitPrefab);
             }
             else
             {
@@ -113,7 +115,8 @@ namespace DRC.RTS.UI.HUD
             {
                 Buildings.BuildingData building = IsBuilding(objectToSpawn);
                 var obj = ObjectPoolManager.SpawnObject(building.buildingPrefab, Mouse.current.position.value, Quaternion.identity, ObjectPoolManager.PoolType.GhostPlaceable).GetComponent<Buildings.GhostPlaceable>();
-                InputHandler.instance.BeginConstruction(obj.GetComponent<Buildings.GhostPlaceable>());
+                PlayerManager.Instance.BeginToPlaceGhostBuilding(obj.GetComponent<Buildings.GhostPlaceable>());
+                InputHandler.Instance.PlacingState();
             }
             else
             {

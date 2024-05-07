@@ -17,9 +17,10 @@ namespace DRC.RTS.Buildings.Player
         public GameObject spawnPoint = null;
         ActionTimer actionTimer;
 
-        private void Start()
+        private new void Start()
         {
             actionTimer = GetComponent<ActionTimer>();
+            base.Start();
         }
 
         public override void OnInteractEnter()
@@ -35,13 +36,19 @@ namespace DRC.RTS.Buildings.Player
         }
         public void SpawnObject()
         {
-            GameObject spawnedObject = Instantiate(spawnOrder[0], spawnPoint.transform.parent.position, Quaternion.identity, PlayerManager.instance.playerUnits.Find(spawnOrder[0].name + "s"));
+            GameObject spawnedObject = Instantiate(spawnOrder[0], spawnPoint.transform.parent.position, Quaternion.identity, PlayerManager.Instance.playerUnits.Find(spawnOrder[0].name + "s"));
             spawnedObject.name = spawnOrder[0].name;
             Units.Player.PlayerUnit pU = spawnedObject.GetComponent<Units.Player.PlayerUnit>();
 
             pU.baseStats = Units.UnitHandler.instance.GetBasicUnitStats(spawnedObject.name.ToLower());
             pU.GetComponent<Health>().SetupHealth();
-            spawnedObject.GetComponent<Units.Player.PlayerUnit>().MoveUnit(spawnPoint.transform.position, Units.Player.PlayerUnit.EUnitAction.Move);
+            spawnedObject.GetComponent<Units.Player.PlayerUnit>().MoveTo(spawnPoint.transform.position, 
+                0f,
+                () =>
+                {
+                    //Set Idle animation
+                }
+                );
             spawnOrder.Remove(spawnOrder[0]);
         }
 
