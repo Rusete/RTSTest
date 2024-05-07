@@ -12,12 +12,16 @@ namespace DRC.RTS.Resources
         public enum EResourceType
         {
             Wood,
-            Rock
+            Rock,
+            Gold
         }
     }
 
     public class GatheringBag<TKey, TValue> : Dictionary<Resources.GameResources.EResourceType, int>
     {
+        public event Action<Resources.GameResources.EResourceType, int, string> OnResourceUpdated;
+
+
         public void AddOrUpdate(Resources.GameResources.EResourceType key, int value)
         {
             if (ContainsKey(key))
@@ -28,6 +32,7 @@ namespace DRC.RTS.Resources
             {
                 Add(key, value);
             }
+            OnResourceUpdated?.Invoke(key, this[key], value.ToString());
         }
 
         public int TotalQuantity()
